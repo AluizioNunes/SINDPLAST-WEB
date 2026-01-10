@@ -19,6 +19,8 @@
     "@supabase/supabase-js": "^2.46.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
+    "echarts": "^6.0.0",
+    "echarts-for-react": "^3.0.5",
     "framer-motion": "^12.0.0",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",

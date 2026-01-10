@@ -128,7 +128,7 @@ export default function EmpresaModal({
         <BaseModal
             isOpen={isOpen}
             onClose={onClose}
-            title={empresa ? 'Editar Empresa' : 'Nova Empresa'}
+            title={empresa ? 'EDIÇÃO DE EMPRESA' : 'CADASTRO DE EMPRESA'}
             size="xl"
         >
             <form onSubmit={handleSubmit} className="space-y-6">

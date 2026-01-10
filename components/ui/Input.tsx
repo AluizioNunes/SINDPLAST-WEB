@@ -6,10 +6,11 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
     helperText?: string;
+    uppercase?: boolean;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ label, error, helperText, className = '', ...props }, ref) => {
+    ({ label, error, helperText, className = '', uppercase, ...props }, ref) => {
         return (
             <div className="w-full">
                 {label && (
@@ -21,9 +22,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 <input
                     ref={ref}
                     className={`block w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 transition-all ${error
-                            ? 'border-red-500 focus:ring-red-500'
-                            : 'border-gray-300 dark:border-gray-600'
-                        } ${className}`}
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                        } ${uppercase ? 'uppercase' : ''} ${className}`}
                     {...props}
                 />
                 {error && (

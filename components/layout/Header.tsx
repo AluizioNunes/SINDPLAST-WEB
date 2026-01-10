@@ -145,10 +145,10 @@ export default function Header({ onMenuClick, sidebarCollapsed }: HeaderProps) {
                             className="object-contain drop-shadow-md"
                         />
                         <div className="flex flex-col justify-center">
-                            <h1 className="text-3xl font-black tracking-wide leading-none text-white drop-shadow-sm whitespace-nowrap">
+                            <h1 className="text-2xl font-black tracking-wide leading-none text-white drop-shadow-sm whitespace-nowrap">
                                 SINDPLAST-AM
                             </h1>
-                            <p className="text-[10px] sm:text-xs font-bold text-white/90 tracking-wide leading-tight whitespace-nowrap">
+                            <p className="text-[9px] sm:text-[11px] font-bold text-white/90 tracking-wide leading-tight whitespace-nowrap uppercase">
                                 SINDICATO DOS TRABALHADORES NAS INDÚSTRIAS DE MATERIAL PLÁSTICO DE MANAUS E DO ESTADO DO AMAZONAS
                             </p>
                         </div>
@@ -160,37 +160,37 @@ export default function Header({ onMenuClick, sidebarCollapsed }: HeaderProps) {
                     {user && (
                         <div className="hidden lg:flex flex-col items-end gap-1 text-right">
                             {/* Nome e Cargo Simplificado */}
-                            <div className="flex items-center justify-end gap-2 font-bold text-lg leading-tight text-white drop-shadow-sm uppercase whitespace-nowrap">
-                                <User className="w-5 h-5 text-white" />
+                            <div className="flex items-center justify-end gap-2 font-bold text-[14.4px] leading-tight text-white drop-shadow-sm uppercase whitespace-nowrap">
+                                <User className="w-4 h-4 text-white" />
                                 <span>{user.details?.Nome || 'USUÁRIO'}</span>
                                 <span className="opacity-50 mx-1">|</span>
                                 <span className="text-white/90">{user.details?.Funcao || 'DEV'}</span>
                             </div>
 
                             {/* Função Detalhada e Perfil (Badge) */}
-                            <div className="flex items-center justify-end gap-3 text-xs text-white/90 font-medium uppercase tracking-wide whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-3 text-[9.6px] text-white/90 font-medium uppercase tracking-wide whitespace-nowrap">
                                 <div className="flex items-center gap-1.5">
-                                    <Briefcase className="w-3.5 h-3.5 text-white/80" />
+                                    <Briefcase className="w-3 h-3 text-white/80" />
                                     <span>FUNÇÃO: {user.details?.Funcao || 'N/A'}</span>
                                 </div>
                                 <span className="opacity-30">|</span>
                                 <div className="flex items-center gap-1.5">
                                     <span>PERFIL:</span>
-                                    <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] text-white border border-white/30">
+                                    <span className="px-2 py-0.5 rounded-full bg-white/20 text-[8px] text-white border border-white/30">
                                         {user.details?.Perfil || 'N/A'}
                                     </span>
                                 </div>
                             </div>
 
                             {/* Datas e Tempos */}
-                            <div className="flex items-center justify-end gap-3 text-xs text-white/80 font-medium uppercase tracking-wide whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-3 text-[9.6px] text-white/80 font-medium uppercase tracking-wide whitespace-nowrap">
                                 <div className="flex items-center gap-1.5">
-                                    <Calendar className="w-3.5 h-3.5 text-white/70" />
+                                    <Calendar className="w-3 h-3 text-white/70" />
                                     <span>CONECTADO: {loginTime?.toLocaleDateString()} {loginTime?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                                 <span className="opacity-30">|</span>
                                 <div className="flex items-center gap-1.5">
-                                    <Clock className="w-3.5 h-3.5 text-white/70" />
+                                    <Clock className="w-3 h-3 text-white/70" />
                                     <span>TEMPO: {connectionTime}</span>
                                 </div>
                             </div>

@@ -83,7 +83,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                                 <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-red-600' : 'text-white'}`} />
                                 {!collapsed && (
                                     <>
-                                        <span className="font-medium whitespace-nowrap overflow-hidden">{item.label}</span>
+                                        <span className="font-medium whitespace-nowrap overflow-hidden uppercase">{item.label}</span>
                                         {isActive && (
                                             <ChevronRight className="w-4 h-4 ml-auto text-red-600" />
                                         )}

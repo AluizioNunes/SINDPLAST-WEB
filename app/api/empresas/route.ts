@@ -40,6 +40,7 @@ export async function GET() {
             observacao: empresa.Observacao as string,
         }));
 
+        console.log(`API Empresas: Retornando ${empresas.length} empresas.`);
         return NextResponse.json(empresas);
     } catch (error) {
         const err = error as Error;

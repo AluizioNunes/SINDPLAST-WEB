@@ -75,6 +75,9 @@ const config: Config = {
                     "100%": { transform: "scale(1)", opacity: "1" },
                 },
             },
+            spacing: {
+                '70': '17.5rem',
+            },
         },
     },
     plugins: [require("tailwindcss-animate")],

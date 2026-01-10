@@ -5,11 +5,14 @@ import { motion } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Socio } from '@/lib/types/socio';
+import SocioModal from '@/components/modals/SocioModal';
 
 export default function SociosPage() {
     const [socios, setSocios] = useState<Socio[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedSocio, setSelectedSocio] = useState<Socio | null>(null);
 
     useEffect(() => {
         loadSocios();
@@ -67,7 +70,11 @@ export default function SociosPage() {
                 <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-teal-600 hover:from-purple-700 hover:to-teal-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all"
+                    onClick={() => {
+                        setSelectedSocio(null);
+                        setIsModalOpen(true);
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-teal-600 hover:from-purple-700 hover:to-teal-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all uppercase tracking-wider"
                 >
                     <Plus className="w-5 h-5" />
                     Novo Sócio
@@ -150,8 +157,8 @@ export default function SociosPage() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
                                                 className={`px-2 py-1 text-xs font-semibold rounded-full ${socio.status?.toUpperCase() === 'ATIVO'
-                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                                    : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
                                                     }`}
                                             >
                                                 {socio.status || 'INATIVO'}
@@ -163,6 +170,10 @@ export default function SociosPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
+                                                    onClick={() => {
+                                                        setSelectedSocio(socio);
+                                                        setIsModalOpen(true);
+                                                    }}
                                                     className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                                                     title="Editar"
                                                 >
@@ -212,6 +223,13 @@ export default function SociosPage() {
                     </p>
                 </div>
             </div>
+
+            <SocioModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSuccess={loadSocios}
+                socio={selectedSocio}
+            />
         </div>
     );
 }
