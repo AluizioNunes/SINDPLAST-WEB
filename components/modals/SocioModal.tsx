@@ -10,10 +10,9 @@ import {
     ChevronRight,
     ChevronLeft,
     Save,
-    XCircle,
     CheckCircle2,
-    Clock
 } from 'lucide-react';
+import { Empresa } from '@/lib/types/empresa';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -54,7 +53,7 @@ const formatCNPJ = (value: string) => {
 export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioModalProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [empresas, setEmpresas] = useState<any[]>([]);
+    const [empresas, setEmpresas] = useState<Empresa[]>([]);
     const [formData, setFormData] = useState<Partial<Socio>>({
         status: 'ATIVO',
         nacionalidade: 'BRASILEIRA',

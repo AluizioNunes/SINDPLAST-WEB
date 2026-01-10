@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, UserCircle, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -145,11 +146,14 @@ export default function DependentesPage() {
                                     >
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {dep.imagem ? (
-                                                <img
-                                                    src={`/images/dependentes/${dep.imagem}`}
-                                                    alt={dep.dependente}
-                                                    className="w-10 h-10 rounded-full object-cover"
-                                                />
+                                                <div className="relative w-10 h-10">
+                                                    <Image
+                                                        src={`/images/dependentes/${dep.imagem}`}
+                                                        alt={dep.dependente || 'Foto do dependente'}
+                                                        fill
+                                                        className="rounded-full object-cover"
+                                                    />
+                                                </div>
                                             ) : (
                                                 <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                                                     <UserCircle className="w-6 h-6 text-gray-400" />

@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import Image from 'next/image';
 
 interface BaseModalProps {
     isOpen: boolean;
@@ -55,10 +56,11 @@ export default function BaseModal({
                                 {/* Left Side: Logo and Union Info */}
                                 <div className="flex items-center gap-2 sm:gap-3 select-none overflow-hidden mr-4">
                                     <div className="relative w-8 h-8 sm:w-12 sm:h-12 flex-shrink-0">
-                                        <img
+                                        <Image
                                             src="/images/SINDPLAST.png"
                                             alt="Logo SINDPLAST"
-                                            className="object-contain drop-shadow-md w-full h-full"
+                                            fill
+                                            className="object-contain drop-shadow-md"
                                         />
                                     </div>
                                     <div className="flex flex-col justify-center overflow-hidden">
