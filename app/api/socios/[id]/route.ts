@@ -18,9 +18,10 @@ export async function GET(
         if (error) throw error;
 
         return NextResponse.json(data);
-    } catch (error: any) {
+    } catch (error) {
+        const err = error as Error;
         return NextResponse.json(
-            { error: 'Failed to fetch socio', message: error.message },
+            { error: 'Failed to fetch socio', message: err.message },
             { status: 500 }
         );
     }
@@ -83,9 +84,10 @@ export async function PUT(
         if (error) throw error;
 
         return NextResponse.json(data);
-    } catch (error: any) {
+    } catch (error) {
+        const err = error as Error;
         return NextResponse.json(
-            { error: 'Failed to update socio', message: error.message },
+            { error: 'Failed to update socio', message: err.message },
             { status: 500 }
         );
     }
@@ -107,9 +109,10 @@ export async function DELETE(
         if (error) throw error;
 
         return NextResponse.json({ message: 'Socio deleted successfully' });
-    } catch (error: any) {
+    } catch (error) {
+        const err = error as Error;
         return NextResponse.json(
-            { error: 'Failed to delete socio', message: error.message },
+            { error: 'Failed to delete socio', message: err.message },
             { status: 500 }
         );
     }

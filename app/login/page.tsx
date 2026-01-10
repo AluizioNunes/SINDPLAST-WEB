@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -60,10 +61,13 @@ export default function LoginPage() {
                             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                             className="inline-block mb-4"
                         >
-                            <img
+                            <Image
                                 src="/images/SINDPLAST.png"
                                 alt="Logo SINDPLAST"
-                                className="w-24 h-24 object-contain drop-shadow-lg mx-auto"
+                                width={96}
+                                height={96}
+                                className="object-contain drop-shadow-lg mx-auto"
+                                priority
                             />
                         </motion.div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

@@ -13,38 +13,39 @@ export async function GET() {
         if (error) throw error;
 
         // Transform database format to API format
-        const empresas = data.map((empresa: any) => ({
-            id: empresa.IdEmpresa,
-            cnpj: empresa.CNPJ,
-            razaoSocial: empresa.RazaoSocial,
-            nomeFantasia: empresa.NomeFantasia,
-            endereco: empresa.Endereco,
-            numero: empresa.Numero,
-            complemento: empresa.Complemento,
-            bairro: empresa.Bairro,
-            cep: empresa.CEP,
-            cidade: empresa.Cidade,
-            uf: empresa.UF,
-            telefone01: empresa.Telefone01,
-            telefone02: empresa.Telefone02,
-            fax: empresa.Fax,
-            celular: empresa.Celular,
-            whatsapp: empresa.WhatsApp,
-            instagram: empresa.Instagram,
-            linkedin: empresa.Linkedin,
-            nFuncionarios: empresa.NFuncionarios,
-            dataContribuicao: empresa.DataContribuicao,
-            valorContribuicao: empresa.ValorContribuicao,
-            dataCadastro: empresa.DataCadastro,
-            cadastrante: empresa.Cadastrante,
-            observacao: empresa.Observacao,
+        const empresas = (data as Array<Record<string, unknown>>).map((empresa) => ({
+            id: empresa.IdEmpresa as number,
+            cnpj: empresa.CNPJ as string,
+            razaoSocial: empresa.RazaoSocial as string,
+            nomeFantasia: empresa.NomeFantasia as string,
+            endereco: empresa.Endereco as string,
+            numero: empresa.Numero as string,
+            complemento: empresa.Complemento as string,
+            bairro: empresa.Bairro as string,
+            cep: empresa.CEP as string,
+            cidade: empresa.Cidade as string,
+            uf: empresa.UF as string,
+            telefone01: empresa.Telefone01 as string,
+            telefone02: empresa.Telefone02 as string,
+            fax: empresa.Fax as string,
+            celular: empresa.Celular as string,
+            whatsapp: empresa.WhatsApp as string,
+            instagram: empresa.Instagram as string,
+            linkedin: empresa.Linkedin as string,
+            nFuncionarios: empresa.NFuncionarios as number,
+            dataContribuicao: empresa.DataContribuicao as string,
+            valorContribuicao: empresa.ValorContribuicao as number,
+            dataCadastro: empresa.DataCadastro as string,
+            cadastrante: empresa.Cadastrante as string,
+            observacao: empresa.Observacao as string,
         }));
 
         return NextResponse.json(empresas);
-    } catch (error: any) {
-        console.error('Error fetching empresas:', error);
+    } catch (error) {
+        const err = error as Error;
+        console.error('Error fetching empresas:', err);
         return NextResponse.json(
-            { error: 'Failed to fetch empresas', message: error.message },
+            { error: 'Failed to fetch empresas', message: err.message },
             { status: 500 }
         );
     }
@@ -87,10 +88,11 @@ export async function POST(request: Request) {
         if (error) throw error;
 
         return NextResponse.json(data, { status: 201 });
-    } catch (error: any) {
-        console.error('Error creating empresa:', error);
+    } catch (error) {
+        const err = error as Error;
+        console.error('Error creating empresa:', err);
         return NextResponse.json(
-            { error: 'Failed to create empresa', message: error.message },
+            { error: 'Failed to create empresa', message: err.message },
             { status: 500 }
         );
     }

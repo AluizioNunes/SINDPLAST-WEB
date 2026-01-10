@@ -67,7 +67,7 @@ export default function PerfilPage() {
                 <Button
                     variant="primary"
                     icon={<Plus className="w-5 h-5" />}
-                    onClick={() => toast.info('Modal de cadastro em desenvolvimento')}
+                    onClick={() => toast('Modal de cadastro em desenvolvimento', { icon: 'ℹ️' })}
                 >
                     Novo Perfil
                 </Button>
@@ -113,7 +113,7 @@ export default function PerfilPage() {
                                 </div>
                                 <div className="flex gap-2">
                                     <button
-                                        onClick={() => toast.info('Edição em desenvolvimento')}
+                                        onClick={() => toast('Edição em desenvolvimento', { icon: 'ℹ️' })}
                                         className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                                         title="Editar"
                                     >

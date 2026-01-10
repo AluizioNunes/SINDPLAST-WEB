@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import {
     LogOut,
@@ -22,7 +23,7 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, sidebarCollapsed }: HeaderProps) {
     const [isDark, setIsDark] = useState(false);
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
     const [loginTime, setLoginTime] = useState<Date | null>(null);
     const [connectionTime, setConnectionTime] = useState<string>('00:00:00');
     const router = useRouter();
@@ -96,7 +97,7 @@ export default function Header({ onMenuClick, sidebarCollapsed }: HeaderProps) {
         }, 1000);
 
         return () => window.clearInterval(timer);
-    }, []);
+    }, [supabase]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const toggleTheme = () => {
         const newTheme = !isDark;
@@ -136,10 +137,12 @@ export default function Header({ onMenuClick, sidebarCollapsed }: HeaderProps) {
                     </button>
 
                     <div className="flex items-center gap-4 select-none">
-                        <img
+                        <Image
                             src="/images/SINDPLAST.png"
                             alt="Logo SINDPLAST"
-                            className="w-[60px] h-[60px] object-contain drop-shadow-md"
+                            width={60}
+                            height={60}
+                            className="object-contain drop-shadow-md"
                         />
                         <div className="flex flex-col justify-center">
                             <h1 className="text-3xl font-black tracking-wide leading-none text-white drop-shadow-sm whitespace-nowrap">

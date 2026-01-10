@@ -3,11 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const supabase = await createClient();
-        const { id } = params;
 
         const { error } = await supabase
             .from('Usuarios')
@@ -17,10 +17,11 @@ export async function DELETE(
         if (error) throw error;
 
         return NextResponse.json({ message: 'Usuario excluído com sucesso' });
-    } catch (error: any) {
-        console.error('Error deleting usuario:', error);
+    } catch (error) {
+        const err = error as Error;
+        console.error('Error deleting usuario:', err);
         return NextResponse.json(
-            { error: 'Failed to delete usuario', message: error.message },
+            { error: 'Failed to delete usuario', message: err.message },
             { status: 500 }
         );
     }

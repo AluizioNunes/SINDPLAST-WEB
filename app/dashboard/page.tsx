@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Building2, UserCircle, Briefcase, TrendingUp, Activity } from 'lucide-react';
+import { Users, Building2, UserCircle, Briefcase } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -25,11 +25,7 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const supabase = createClient();
 
-    useEffect(() => {
-        loadStats();
-    }, []);
-
-    const loadStats = async () => {
+    const loadStats = useCallback(async () => {
         try {
             const [sociosRes, empresasRes, dependentesRes, usuariosRes] = await Promise.all([
                 supabase.from('Socios').select('IdSocio', { count: 'exact', head: true }),
@@ -49,7 +45,11 @@ export default function DashboardPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [supabase]);
+
+    useEffect(() => {
+        loadStats();
+    }, [loadStats]);
 
     const statCards = [
         { icon: Users, label: 'Sócios', value: stats.socios, color: 'from-purple-500 to-purple-600', bgColor: 'bg-purple-100 dark:bg-purple-900/20' },

@@ -76,7 +76,7 @@ export default function PermissoesPage() {
                 <Button
                     variant="primary"
                     icon={<Plus className="w-5 h-5" />}
-                    onClick={() => toast.info('Modal de cadastro em desenvolvimento')}
+                    onClick={() => toast('Modal de cadastro em desenvolvimento', { icon: 'ℹ️' })}
                 >
                     Nova Permissão
                 </Button>
@@ -131,7 +131,7 @@ export default function PermissoesPage() {
                                         </h3>
                                         <div className="flex gap-1">
                                             <button
-                                                onClick={() => toast.info('Edição em desenvolvimento')}
+                                                onClick={() => toast('Edição em desenvolvimento', { icon: 'ℹ️' })}
                                                 className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                                                 title="Editar"
                                             >

@@ -13,10 +13,11 @@ export async function GET() {
         if (error) throw error;
 
         return NextResponse.json(data);
-    } catch (error: any) {
-        console.error('Error fetching usuarios:', error);
+    } catch (error) {
+        const err = error as Error;
+        console.error('Error fetching usuarios:', err);
         return NextResponse.json(
-            { error: 'Failed to fetch usuarios', message: error.message },
+            { error: 'Failed to fetch usuarios', message: err.message },
             { status: 500 }
         );
     }
@@ -25,7 +26,7 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const supabase = await createClient();
-        const body = await request.json();
+        const body = (await request.json()) as Record<string, unknown>;
 
         const { data, error } = await supabase
             .from('Usuarios')
@@ -44,10 +45,11 @@ export async function POST(request: Request) {
         if (error) throw error;
 
         return NextResponse.json(data, { status: 201 });
-    } catch (error: any) {
-        console.error('Error creating usuario:', error);
+    } catch (error) {
+        const err = error as Error;
+        console.error('Error creating usuario:', err);
         return NextResponse.json(
-            { error: 'Failed to create usuario', message: error.message },
+            { error: 'Failed to create usuario', message: err.message },
             { status: 500 }
         );
     }

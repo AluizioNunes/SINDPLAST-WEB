@@ -1,0 +1,34 @@
+
+> sindplast-nextjs@1.0.0 build
+> next build
+
+   Ôû▓ Next.js 15.1.3
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+
+./app/dependentes/page.tsx
+148:49  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./app/login/page.tsx
+63:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/layout/Header.tsx
+139:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+Failed to compile.
+
+./lib/supabase/middleware.ts:20:24
+Type error: Parameter 'cookiesToSet' implicitly has an 'any' type.
+
+  18 |                     return request.cookies.getAll()
+  19 |                 },
+> 20 |                 setAll(cookiesToSet) {
+     |                        ^
+  21 |                     cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+  22 |                     supabaseResponse = NextResponse.next({
+  23 |                         request,
+Static worker exited with code: 1 and signal: null

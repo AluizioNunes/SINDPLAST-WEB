@@ -13,53 +13,54 @@ export async function GET() {
         if (error) throw error;
 
         // Transform database format to API format
-        const socios = data.map((socio: any) => ({
-            id: socio.IdSocio,
-            nome: socio.Nome,
-            rg: socio.RG,
-            emissor: socio.Emissor,
-            cpf: socio.CPF,
-            nascimento: socio.Nascimento,
-            sexo: socio.Sexo,
-            naturalidade: socio.Naturalidade,
-            naturalidadeUF: socio.NaturalidadeUF,
-            nacionalidade: socio.Nacionalidade,
-            estadoCivil: socio.EstadoCivil,
-            endereco: socio.Endereco,
-            complemento: socio.Complemento,
-            bairro: socio.Bairro,
-            cep: socio.CEP,
-            celular: socio.Celular,
-            redeSocial: socio.RedeSocial,
-            pai: socio.Pai,
-            mae: socio.Mae,
-            dataCadastro: socio.DataCadastro,
-            cadastrante: socio.Cadastrante,
-            status: socio.Status,
-            matricula: socio.Matricula,
-            dataMensalidade: socio.DataMensalidade,
-            valorMensalidade: socio.ValorMensalidade,
-            dataAdmissao: socio.DataAdmissao,
-            ctps: socio.CTPS,
-            funcao: socio.Funcao,
-            codEmpresa: socio.CodEmpresa,
-            cnpj: socio.CNPJ,
-            razaoSocial: socio.RazaoSocial,
-            nomeFantasia: socio.NomeFantasia,
-            dataDemissao: socio.DataDemissao,
-            motivoDemissao: socio.MotivoDemissao,
-            carta: socio.Carta,
-            carteira: socio.Carteira,
-            ficha: socio.Ficha,
-            observacao: socio.Observacao,
-            telefone: socio.Telefone,
+        const socios = (data as Array<Record<string, unknown>>).map((socio) => ({
+            id: socio.IdSocio as number,
+            nome: socio.Nome as string,
+            rg: socio.RG as string,
+            emissor: socio.Emissor as string,
+            cpf: socio.CPF as string,
+            nascimento: socio.Nascimento as string,
+            sexo: socio.Sexo as string,
+            naturalidade: socio.Naturalidade as string,
+            naturalidadeUF: socio.NaturalidadeUF as string,
+            nacionalidade: socio.Nacionalidade as string,
+            estadoCivil: socio.EstadoCivil as string,
+            endereco: socio.Endereco as string,
+            complemento: socio.Complemento as string,
+            bairro: socio.Bairro as string,
+            cep: socio.CEP as string,
+            celular: socio.Celular as string,
+            redeSocial: socio.RedeSocial as string,
+            pai: socio.Pai as string,
+            mae: socio.Mae as string,
+            dataCadastro: socio.DataCadastro as string,
+            cadastrante: socio.Cadastrante as string,
+            status: socio.Status as string,
+            matricula: socio.Matricula as string,
+            dataMensalidade: socio.DataMensalidade as string,
+            valorMensalidade: socio.ValorMensalidade as number,
+            dataAdmissao: socio.DataAdmissao as string,
+            ctps: socio.CTPS as string,
+            funcao: socio.Funcao as string,
+            codEmpresa: socio.CodEmpresa as number,
+            cnpj: socio.CNPJ as string,
+            razaoSocial: socio.RazaoSocial as string,
+            nomeFantasia: socio.NomeFantasia as string,
+            dataDemissao: socio.DataDemissao as string,
+            motivoDemissao: socio.MotivoDemissao as string,
+            carta: socio.Carta as string,
+            carteira: socio.Carteira as string,
+            ficha: socio.Ficha as string,
+            observacao: socio.Observacao as string,
+            telefone: socio.Telefone as string,
         }));
 
         return NextResponse.json(socios);
-    } catch (error: any) {
-        console.error('Error fetching socios:', error);
+    } catch (error) {
+        const err = error as Error;
+        console.error('Error fetching socios:', err);
         return NextResponse.json(
-            { error: 'Failed to fetch socios', message: error.message },
+            { error: 'Failed to fetch socios', message: err.message },
             { status: 500 }
         );
     }
@@ -68,7 +69,7 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const supabase = await createClient();
-        const body = await request.json();
+        const body = (await request.json()) as Record<string, unknown>;
 
         const { data, error } = await supabase
             .from('Socios')
@@ -117,10 +118,11 @@ export async function POST(request: Request) {
         if (error) throw error;
 
         return NextResponse.json(data, { status: 201 });
-    } catch (error: any) {
-        console.error('Error creating socio:', error);
+    } catch (error) {
+        const err = error as Error;
+        console.error('Error creating socio:', err);
         return NextResponse.json(
-            { error: 'Failed to create socio', message: error.message },
+            { error: 'Failed to create socio', message: err.message },
             { status: 500 }
         );
     }

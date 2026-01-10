@@ -14,25 +14,26 @@ export async function GET() {
         if (error) throw error;
 
         // Transform database format to API format
-        const dependentes = data.map((dep: any) => ({
-            id: dep.IdDependente,
-            codDependente: dep.CodDependente,
-            codSocio: dep.CodSocio,
-            socio: dep.Socio,
-            nome: dep.Dependente,
-            nascimento: dep.Nascimento,
-            parentesco: dep.Parentesco,
-            carteira: dep.Carteira,
-            dataCadastro: dep.DataCadastro,
-            imagem: dep.Imagem,
-            status: dep.Status
+        const dependentes = (data as Array<Record<string, unknown>>).map((dep) => ({
+            id: dep.IdDependente as number,
+            codDependente: dep.CodDependente as string,
+            codSocio: dep.CodSocio as number,
+            socio: dep.Socio as string,
+            nome: dep.Dependente as string,
+            nascimento: dep.Nascimento as string,
+            parentesco: dep.Parentesco as string,
+            carteira: dep.Carteira as string,
+            dataCadastro: dep.DataCadastro as string,
+            imagem: dep.Imagem as string,
+            status: dep.Status as boolean
         }));
 
         return NextResponse.json(dependentes);
-    } catch (error: any) {
-        console.error('Error fetching dependentes:', error);
+    } catch (error) {
+        const err = error as Error;
+        console.error('Error fetching dependentes:', err);
         return NextResponse.json(
-            { error: 'Failed to fetch dependentes', message: error.message },
+            { error: 'Failed to fetch dependentes', message: err.message },
             { status: 500 }
         );
     }
@@ -61,10 +62,11 @@ export async function POST(request: Request) {
         if (error) throw error;
 
         return NextResponse.json(data, { status: 201 });
-    } catch (error: any) {
-        console.error('Error creating dependente:', error);
+    } catch (error) {
+        const err = error as Error;
+        console.error('Error creating dependente:', err);
         return NextResponse.json(
-            { error: 'Failed to create dependente', message: error.message },
+            { error: 'Failed to create dependente', message: err.message },
             { status: 500 }
         );
     }
