@@ -20,6 +20,7 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import { Socio } from '@/lib/types/socio';
 import toast from 'react-hot-toast';
+import { createSocio, updateSocio } from '@/app/actions/socios';
 
 interface SocioModalProps {
     isOpen: boolean;
@@ -69,8 +70,6 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
             const response = await fetch('/api/empresas');
             if (response.ok) {
                 const data = await response.json();
-                console.log('Empresas carregadas:', data);
-                if (data.length > 0) console.table(data.slice(0, 5));
                 setEmpresas(data);
             }
         } catch (error) {
@@ -162,23 +161,21 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
     const handleSubmit = async () => {
         setLoading(true);
         try {
-            const url = socio ? `/api/socios/${socio.id}` : '/api/socios';
-            const method = socio ? 'PUT' : 'POST';
+            let result;
+            if (socio) {
+                result = await updateSocio(socio.id, formData);
+            } else {
+                result = await createSocio(formData);
+            }
 
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-
-            if (!response.ok) throw new Error('Erro ao salvar sócio');
+            if (!result.success) throw new Error(result.error);
 
             toast.success(socio ? 'Sócio atualizado!' : 'Sócio cadastrado!');
             onSuccess();
             onClose();
         } catch (error) {
             console.error(error);
-            toast.error('Erro ao salvar dados');
+            toast.error(error instanceof Error ? error.message : 'Erro ao salvar dados');
         } finally {
             setLoading(false);
         }

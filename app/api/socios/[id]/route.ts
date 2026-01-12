@@ -1,29 +1,35 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+ import { requireAuth } from '@/lib/api/auth'
+ import { badRequest, internalError, noContent, notFound, ok } from '@/lib/api/http'
+ import { parseJsonBody } from '@/lib/api/validation'
+ import { mapSocioRow } from '@/lib/mappers/socio'
 
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        const supabase = await createClient();
+        const auth = await requireAuth()
+        if ('response' in auth) return auth.response
 
-        const { data, error } = await supabase
+        const { id } = await params
+
+        const { data, error } = await auth.supabase
             .from('Socios')
             .select('*')
             .eq('IdSocio', id)
-            .single();
+            .single()
 
-        if (error) throw error;
+        if (error) {
+            const anyErr = error as unknown as { code?: string }
+            if (anyErr.code === 'PGRST116') return notFound()
+            throw error
+        }
 
-        return NextResponse.json(data);
+        return ok(mapSocioRow(data as unknown as Record<string, unknown>))
     } catch (error) {
-        const err = error as Error;
-        return NextResponse.json(
-            { error: 'Failed to fetch socio', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error fetching socio:', err)
+        return internalError(err.message)
     }
 }
 
@@ -32,11 +38,14 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        const supabase = await createClient();
-        const body = await request.json();
+        const auth = await requireAuth()
+        if ('response' in auth) return auth.response
 
-        const { data, error } = await supabase
+        const { id } = await params
+        const body = await parseJsonBody(request)
+        if (!body) return badRequest('Invalid JSON body')
+
+        const { data, error } = await auth.supabase
             .from('Socios')
             .update({
                 Nome: body.nome,
@@ -57,7 +66,7 @@ export async function PUT(
                 RedeSocial: body.redeSocial,
                 Pai: body.pai,
                 Mae: body.mae,
-                Cadastrante: body.cadastrante,
+                Cadastrante: auth.user.email ?? 'Sistema',
                 Status: body.status,
                 Matricula: body.matricula,
                 DataMensalidade: body.dataMensalidade,
@@ -79,17 +88,19 @@ export async function PUT(
             })
             .eq('IdSocio', id)
             .select()
-            .single();
+            .single()
 
-        if (error) throw error;
+        if (error) {
+            const anyErr = error as unknown as { code?: string }
+            if (anyErr.code === 'PGRST116') return notFound()
+            throw error
+        }
 
-        return NextResponse.json(data);
+        return ok(mapSocioRow(data as unknown as Record<string, unknown>))
     } catch (error) {
-        const err = error as Error;
-        return NextResponse.json(
-            { error: 'Failed to update socio', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error updating socio:', err)
+        return internalError(err.message)
     }
 }
 
@@ -98,22 +109,22 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        const supabase = await createClient();
+        const auth = await requireAuth()
+        if ('response' in auth) return auth.response
 
-        const { error } = await supabase
+        const { id } = await params
+
+        const { error } = await auth.supabase
             .from('Socios')
             .delete()
-            .eq('IdSocio', id);
+            .eq('IdSocio', id)
 
-        if (error) throw error;
+        if (error) throw error
 
-        return NextResponse.json({ message: 'Socio deleted successfully' });
+        return noContent()
     } catch (error) {
-        const err = error as Error;
-        return NextResponse.json(
-            { error: 'Failed to delete socio', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error deleting socio:', err)
+        return internalError(err.message)
     }
 }

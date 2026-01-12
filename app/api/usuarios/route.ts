@@ -1,32 +1,41 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { requireAuth } from '@/lib/api/auth'
+import { badRequest, created, internalError, ok } from '@/lib/api/http'
+import { parseJsonBody } from '@/lib/api/validation'
 
 export async function GET() {
     try {
-        const supabase = await createClient();
+        const auth = await requireAuth()
+        if ('response' in auth) return auth.response
+
+        const supabase = auth.supabase
 
         const { data, error } = await supabase
             .from('Usuarios')
             .select('*')
             .order('IdUsuarios', { ascending: false });
 
-        if (error) throw error;
+        if (error) throw error
 
-        return NextResponse.json(data);
+        return ok(data)
     } catch (error) {
-        const err = error as Error;
-        console.error('Error fetching usuarios:', err);
-        return NextResponse.json(
-            { error: 'Failed to fetch usuarios', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error fetching usuarios:', err)
+        return internalError(err.message)
     }
 }
 
 export async function POST(request: Request) {
     try {
-        const supabase = await createClient();
-        const body = (await request.json()) as Record<string, unknown>;
+        const auth = await requireAuth()
+        if ('response' in auth) return auth.response
+
+        const supabase = auth.supabase
+        const body = await parseJsonBody(request)
+        if (!body) return badRequest('Invalid JSON body')
+
+        if (typeof body.Nome !== 'string' || body.Nome.trim().length === 0) {
+            return badRequest('Field "Nome" is required')
+        }
 
         const { data, error } = await supabase
             .from('Usuarios')
@@ -37,20 +46,17 @@ export async function POST(request: Request) {
                 Email: body.Email,
                 Usuario: body.Usuario,
                 Perfil: body.Perfil,
-                Cadastrante: body.Cadastrante || 'Sistema',
+                Cadastrante: auth.user.email ?? 'Sistema',
             })
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) throw error
 
-        return NextResponse.json(data, { status: 201 });
+        return created(data)
     } catch (error) {
-        const err = error as Error;
-        console.error('Error creating usuario:', err);
-        return NextResponse.json(
-            { error: 'Failed to create usuario', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error creating usuario:', err)
+        return internalError(err.message)
     }
 }

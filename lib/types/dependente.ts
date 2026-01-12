@@ -3,6 +3,7 @@ export interface Dependente {
     codDependente: number;
     codSocio: number | string;
     socio: string;
+    empresa?: string;
     dependente: string;
     nascimento: string;
     parentesco: string;
@@ -11,4 +12,5 @@ export interface Dependente {
     cadastrante: string;
     imagem?: string;
     status?: boolean;
+    flagOrfao?: boolean;
 }

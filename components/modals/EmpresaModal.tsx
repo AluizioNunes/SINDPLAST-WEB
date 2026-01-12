@@ -8,6 +8,7 @@ import Textarea from '../ui/Textarea';
 import Button from '../ui/Button';
 import { Empresa } from '@/lib/types/empresa';
 import toast from 'react-hot-toast';
+import { createEmpresa, updateEmpresa } from '@/app/actions/empresas';
 
 interface EmpresaModalProps {
     isOpen: boolean;
@@ -84,23 +85,21 @@ export default function EmpresaModal({
         setLoading(true);
 
         try {
-            const url = empresa ? `/api/empresas/${empresa.id}` : '/api/empresas';
-            const method = empresa ? 'PUT' : 'POST';
+            let result;
+            if (empresa) {
+                result = await updateEmpresa(empresa.id, formData);
+            } else {
+                result = await createEmpresa(formData);
+            }
 
-            const response = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-
-            if (!response.ok) throw new Error('Failed to save empresa');
+            if (!result.success) throw new Error(result.error);
 
             toast.success(empresa ? 'Empresa atualizada!' : 'Empresa cadastrada!');
             onSave();
             onClose();
         } catch (error) {
             console.error('Error saving empresa:', error);
-            toast.error('Erro ao salvar empresa');
+            toast.error(error instanceof Error ? error.message : 'Erro ao salvar empresa');
         } finally {
             setLoading(false);
         }

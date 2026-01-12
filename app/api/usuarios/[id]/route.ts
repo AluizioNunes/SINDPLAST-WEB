@@ -1,28 +1,27 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { requireAuth } from '@/lib/api/auth'
+import { internalError, noContent } from '@/lib/api/http'
 
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params;
-        const supabase = await createClient();
+        const auth = await requireAuth()
+        if ('response' in auth) return auth.response
 
-        const { error } = await supabase
+        const { id } = await params
+
+        const { error } = await auth.supabase
             .from('Usuarios')
             .delete()
             .eq('IdUsuarios', id);
 
-        if (error) throw error;
+        if (error) throw error
 
-        return NextResponse.json({ message: 'Usuario excluído com sucesso' });
+        return noContent()
     } catch (error) {
-        const err = error as Error;
-        console.error('Error deleting usuario:', err);
-        return NextResponse.json(
-            { error: 'Failed to delete usuario', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error deleting usuario:', err)
+        return internalError(err.message)
     }
 }

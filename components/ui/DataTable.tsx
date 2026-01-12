@@ -224,15 +224,15 @@ export default function DataTable<TData>({
             {/* Table Container */}
             <div className="glass-card shadow-xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm relative">
                 <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                        <thead className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <tr key={headerGroup.id}>
-                                    <DndContext
-                                        sensors={sensors}
-                                        collisionDetection={closestCenter}
-                                        onDragEnd={handleDragEnd}
-                                    >
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <table className="w-full border-collapse">
+                            <thead className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <tr key={headerGroup.id}>
                                         <SortableContext
                                             items={columnOrder}
                                             strategy={horizontalListSortingStrategy}
@@ -241,42 +241,42 @@ export default function DataTable<TData>({
                                                 <DraggableHeader key={header.id} header={header} />
                                             ))}
                                         </SortableContext>
-                                    </DndContext>
-                                </tr>
-                            ))}
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                            <AnimatePresence mode="popLayout">
-                                {table.getRowModel().rows.length > 0 ? (
-                                    table.getRowModel().rows.map((row) => (
-                                        <motion.tr
-                                            key={row.id}
-                                            layout
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            className="hover:bg-red-50/30 dark:hover:bg-red-900/10 transition-colors group"
-                                        >
-                                            {row.getVisibleCells().map((cell) => (
-                                                <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                </td>
-                                            ))}
-                                        </motion.tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td
-                                            colSpan={columns.length}
-                                            className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                                        >
-                                            Nenhum dado encontrado.
-                                        </td>
                                     </tr>
-                                )}
-                            </AnimatePresence>
-                        </tbody>
-                    </table>
+                                ))}
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                <AnimatePresence mode="popLayout">
+                                    {table.getRowModel().rows.length > 0 ? (
+                                        table.getRowModel().rows.map((row) => (
+                                            <motion.tr
+                                                key={row.id}
+                                                layout
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                className="hover:bg-red-50/30 dark:hover:bg-red-900/10 transition-colors group"
+                                            >
+                                                {row.getVisibleCells().map((cell) => (
+                                                    <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                    </td>
+                                                ))}
+                                            </motion.tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td
+                                                colSpan={columns.length}
+                                                className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
+                                            >
+                                                Nenhum dado encontrado.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </AnimatePresence>
+                            </tbody>
+                        </table>
+                    </DndContext>
                 </div>
 
                 {/* Pagination Controls */}

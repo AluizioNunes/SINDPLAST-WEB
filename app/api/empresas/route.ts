@@ -1,65 +1,47 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+ import { requireAuth } from '@/lib/api/auth'
+import { badRequest, created, internalError, ok } from '@/lib/api/http'
+import { parseJsonBody } from '@/lib/api/validation'
+import { mapEmpresaRow } from '@/lib/mappers/empresa'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET() {
     try {
-        const supabase = await createClient();
+        const supabase = createAdminClient()
 
         const { data, error } = await supabase
             .from('Empresas')
             .select('*')
-            .order('IdEmpresa', { ascending: false });
+            .order('IdEmpresa', { ascending: false })
+            .limit(10000); // Remove limite de 1000 padrão do PostgREST
 
-        if (error) throw error;
+        if (error) throw error
 
-        // Transform database format to API format
-        const empresas = (data as Array<Record<string, unknown>>).map((empresa) => ({
-            id: empresa.IdEmpresa as number,
-            cnpj: empresa.CNPJ as string,
-            razaoSocial: empresa.RazaoSocial as string,
-            nomeFantasia: empresa.NomeFantasia as string,
-            endereco: empresa.Endereco as string,
-            numero: empresa.Numero as string,
-            complemento: empresa.Complemento as string,
-            bairro: empresa.Bairro as string,
-            cep: empresa.CEP as string,
-            cidade: empresa.Cidade as string,
-            uf: empresa.UF as string,
-            telefone01: empresa.Telefone01 as string,
-            telefone02: empresa.Telefone02 as string,
-            fax: empresa.Fax as string,
-            celular: empresa.Celular as string,
-            whatsapp: empresa.WhatsApp as string,
-            instagram: empresa.Instagram as string,
-            linkedin: empresa.Linkedin as string,
-            nFuncionarios: empresa.NFuncionarios as number,
-            dataContribuicao: empresa.DataContribuicao as string,
-            valorContribuicao: empresa.ValorContribuicao as number,
-            dataCadastro: empresa.DataCadastro as string,
-            cadastrante: empresa.Cadastrante as string,
-            observacao: empresa.Observacao as string,
-        }));
-
-        console.log(`API Empresas: Retornando ${empresas.length} empresas.`);
-        return NextResponse.json(empresas);
+        const empresas = (data as Array<Record<string, unknown>>).map(mapEmpresaRow)
+        return ok(empresas)
     } catch (error) {
-        const err = error as Error;
-        console.error('Error fetching empresas:', err);
-        return NextResponse.json(
-            { error: 'Failed to fetch empresas', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error fetching empresas:', err)
+        return internalError(err.message)
     }
 }
 
 export async function POST(request: Request) {
     try {
-        const supabase = await createClient();
-        const body = await request.json();
+        const auth = await requireAuth()
+        if ('response' in auth) return auth.response
+
+        const supabase = auth.supabase
+        const body = await parseJsonBody(request)
+        if (!body) return badRequest('Invalid JSON body')
+
+        if (typeof body.razaoSocial !== 'string' || body.razaoSocial.trim().length === 0) {
+            return badRequest('Field "razaoSocial" is required')
+        }
 
         const { data, error } = await supabase
             .from('Empresas')
             .insert({
+                CodEmpresa: body.codEmpresa,
                 CNPJ: body.cnpj,
                 RazaoSocial: body.razaoSocial,
                 NomeFantasia: body.nomeFantasia,
@@ -80,21 +62,18 @@ export async function POST(request: Request) {
                 NFuncionarios: body.nFuncionarios,
                 DataContribuicao: body.dataContribuicao,
                 ValorContribuicao: body.valorContribuicao,
-                Cadastrante: body.cadastrante || 'Sistema',
+                Cadastrante: auth.user.email ?? 'Sistema',
                 Observacao: body.observacao,
             })
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) throw error
 
-        return NextResponse.json(data, { status: 201 });
+        return created(mapEmpresaRow(data as unknown as Record<string, unknown>))
     } catch (error) {
-        const err = error as Error;
-        console.error('Error creating empresa:', err);
-        return NextResponse.json(
-            { error: 'Failed to create empresa', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error creating empresa:', err)
+        return internalError(err.message)
     }
 }

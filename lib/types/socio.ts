@@ -38,4 +38,6 @@ export interface Socio {
     ficha: boolean | null;
     observacao: string | null;
     telefone: string | null;
+    empresa: string | null;
+    setor: string | null;
 }

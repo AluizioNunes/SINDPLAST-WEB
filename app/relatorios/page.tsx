@@ -14,7 +14,27 @@ export default function RelatoriosPage() {
     const [status, setStatus] = useState('todos');
 
     const handleGenerateReport = () => {
-        toast.success('Relatório gerado! (Funcionalidade em desenvolvimento)');
+        if (reportType === 'socios') {
+            const params = new URLSearchParams();
+            if (status !== 'todos') params.append('status', status);
+            if (dateFrom) params.append('dateFrom', dateFrom);
+            if (dateTo) params.append('dateTo', dateTo);
+            
+            window.open(`/relatorios/print/socios?${params.toString()}`, '_blank');
+            return;
+        }
+
+        if (reportType === 'empresas') {
+            window.open(`/relatorios/print/empresas`, '_blank');
+            return;
+        }
+
+        if (reportType === 'dependentes') {
+            window.open(`/relatorios/print/dependentes`, '_blank');
+            return;
+        }
+        
+        toast.success(`Relatório de ${reportType} em desenvolvimento`);
     };
 
     const reportTypes = [
@@ -99,7 +119,7 @@ export default function RelatoriosPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <button
-                        onClick={() => toast('Gerando relatório...', { icon: 'ℹ️' })}
+                        onClick={() => window.open('/relatorios/print/socios?status=ativo', '_blank')}
                         className="p-4 text-left glass-card hover:shadow-lg transition-all border-2 border-transparent hover:border-purple-500"
                     >
                         <FileText className="w-8 h-8 text-purple-600 mb-2" />

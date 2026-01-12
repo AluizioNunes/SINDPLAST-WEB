@@ -14,6 +14,11 @@ import {
     FileText,
     Wrench,
     ChevronRight,
+    Tags,
+    Package,
+    PieChart,
+    TrendingDown,
+    TrendingUp,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,6 +33,11 @@ const menuItems = [
     { icon: Building2, label: 'Empresas', href: '/empresas' },
     { icon: UserCircle, label: 'Dependentes', href: '/dependentes' },
     { icon: Briefcase, label: 'Funcionários', href: '/funcionarios' },
+    { icon: Tags, label: 'Funções', href: '/funcoes' },
+    { icon: Package, label: 'Ativos', href: '/ativos' },
+    { icon: PieChart, label: 'Centro de Custos', href: '/centro-custos' },
+    { icon: TrendingDown, label: 'Contas a Pagar', href: '/contas-pagar' },
+    { icon: TrendingUp, label: 'Contas a Receber', href: '/contas-receber' },
     { icon: Users, label: 'Usuários', href: '/usuarios' },
     { icon: Shield, label: 'Perfil', href: '/perfil' },
     { icon: Settings, label: 'Permissões', href: '/permissoes' },
@@ -38,7 +48,7 @@ const menuItems = [
 export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) {
     const pathname = usePathname();
 
-    const SidebarContent = ({ collapsed = false }) => (
+    const SidebarContent = ({ collapsed = false, onItemClick }: { collapsed?: boolean, onItemClick?: () => void }) => (
         <div className="flex flex-col h-full bg-gradient-to-b from-red-600 to-red-800 text-white transition-all duration-300">
             <div className={`p-6 border-b border-red-500/30 h-20 flex items-center justify-between`}>
                 {collapsed ? (
@@ -73,7 +83,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                     const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
 
                     return (
-                        <Link key={item.href} href={item.href} onClick={onClose} title={collapsed ? item.label : ''}>
+                        <Link key={item.href} href={item.href} onClick={onItemClick} title={collapsed ? item.label : ''}>
                             <div
                                 className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all ${isActive
                                     ? 'bg-white text-red-600 shadow-lg font-bold'
@@ -129,7 +139,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                 className="fixed left-0 top-0 h-full w-70 z-50 lg:hidden shadow-2xl"
             >
-                <SidebarContent />
+                <SidebarContent onItemClick={onClose} />
             </motion.aside>
 
             {/* Desktop Sidebar (Static Fixed) */}

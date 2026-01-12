@@ -1,0 +1,21 @@
+{
+"Usuarios": [
+	{
+		"SENH_CODIGO" : 2,
+		"SENH_NOME" : "CORREA",
+		"SENH_SENHA" : "DEUS31",
+		"SENH_NIVEL" : 3
+	},
+	{
+		"SENH_CODIGO" : 3,
+		"SENH_NOME" : "ADMINISTRADOR",
+		"SENH_SENHA" : "DEUS31",
+		"SENH_NIVEL" : 0
+	},
+	{
+		"SENH_CODIGO" : 4,
+		"SENH_NOME" : "WALDENICE",
+		"SENH_SENHA" : "180581",
+		"SENH_NIVEL" : 1
+	}
+]}

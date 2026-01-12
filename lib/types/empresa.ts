@@ -24,4 +24,5 @@ export interface Empresa {
     dataCadastro: string;
     cadastrante: string;
     observacao: string;
+    nSocios?: number;
 }

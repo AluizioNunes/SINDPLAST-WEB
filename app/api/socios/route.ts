@@ -1,75 +1,41 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { requireAuth } from '@/lib/api/auth'
+import { badRequest, created, internalError, ok } from '@/lib/api/http'
+import { parseJsonBody } from '@/lib/api/validation'
+import { mapSocioRow } from '@/lib/mappers/socio'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET() {
     try {
-        const supabase = await createClient();
+        const supabase = createAdminClient()
 
         const { data, error } = await supabase
             .from('Socios')
             .select('*')
             .order('IdSocio', { ascending: false });
 
-        if (error) throw error;
+        if (error) throw error
 
-        // Transform database format to API format
-        const socios = (data as Array<Record<string, unknown>>).map((socio) => ({
-            id: socio.IdSocio as number,
-            nome: socio.Nome as string,
-            rg: socio.RG as string,
-            emissor: socio.Emissor as string,
-            cpf: socio.CPF as string,
-            nascimento: socio.Nascimento as string,
-            sexo: socio.Sexo as string,
-            naturalidade: socio.Naturalidade as string,
-            naturalidadeUF: socio.NaturalidadeUF as string,
-            nacionalidade: socio.Nacionalidade as string,
-            estadoCivil: socio.EstadoCivil as string,
-            endereco: socio.Endereco as string,
-            complemento: socio.Complemento as string,
-            bairro: socio.Bairro as string,
-            cep: socio.CEP as string,
-            celular: socio.Celular as string,
-            redeSocial: socio.RedeSocial as string,
-            pai: socio.Pai as string,
-            mae: socio.Mae as string,
-            dataCadastro: socio.DataCadastro as string,
-            cadastrante: socio.Cadastrante as string,
-            status: socio.Status as string,
-            matricula: socio.Matricula as string,
-            dataMensalidade: socio.DataMensalidade as string,
-            valorMensalidade: socio.ValorMensalidade as number,
-            dataAdmissao: socio.DataAdmissao as string,
-            ctps: socio.CTPS as string,
-            funcao: socio.Funcao as string,
-            codEmpresa: socio.CodEmpresa as number,
-            cnpj: socio.CNPJ as string,
-            razaoSocial: socio.RazaoSocial as string,
-            nomeFantasia: socio.NomeFantasia as string,
-            dataDemissao: socio.DataDemissao as string,
-            motivoDemissao: socio.MotivoDemissao as string,
-            carta: socio.Carta as string,
-            carteira: socio.Carteira as string,
-            ficha: socio.Ficha as string,
-            observacao: socio.Observacao as string,
-            telefone: socio.Telefone as string,
-        }));
-
-        return NextResponse.json(socios);
+        const socios = (data as Array<Record<string, unknown>>).map(mapSocioRow)
+        return ok(socios)
     } catch (error) {
-        const err = error as Error;
-        console.error('Error fetching socios:', err);
-        return NextResponse.json(
-            { error: 'Failed to fetch socios', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error fetching socios:', err)
+        return internalError(err.message)
     }
 }
 
 export async function POST(request: Request) {
     try {
-        const supabase = await createClient();
-        const body = (await request.json()) as Record<string, unknown>;
+        const auth = await requireAuth()
+        if ('response' in auth) return auth.response
+
+        const supabase = auth.supabase
+        const body = await parseJsonBody(request)
+        if (!body) return badRequest('Invalid JSON body')
+
+        if (typeof body.nome !== 'string' || body.nome.trim().length === 0) {
+            return badRequest('Field "nome" is required')
+        }
 
         const { data, error } = await supabase
             .from('Socios')
@@ -92,7 +58,7 @@ export async function POST(request: Request) {
                 RedeSocial: body.redeSocial,
                 Pai: body.pai,
                 Mae: body.mae,
-                Cadastrante: body.cadastrante || 'Sistema',
+                Cadastrante: auth.user.email ?? 'Sistema',
                 Status: body.status,
                 Matricula: body.matricula,
                 DataMensalidade: body.dataMensalidade,
@@ -115,15 +81,12 @@ export async function POST(request: Request) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) throw error
 
-        return NextResponse.json(data, { status: 201 });
+        return created(mapSocioRow(data as unknown as Record<string, unknown>))
     } catch (error) {
-        const err = error as Error;
-        console.error('Error creating socio:', err);
-        return NextResponse.json(
-            { error: 'Failed to create socio', message: err.message },
-            { status: 500 }
-        );
+        const err = error as Error
+        console.error('Error creating socio:', err)
+        return internalError(err.message)
     }
 }
