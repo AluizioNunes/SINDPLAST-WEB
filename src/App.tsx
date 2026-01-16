@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider, theme } from 'antd';
 import { Toaster } from 'react-hot-toast';
+import { Analytics } from '@vercel/analytics/react';
 
 // Layout
 import Sidebar from '@/components/layout/Sidebar';
@@ -119,6 +120,7 @@ export default function App() {
           </Routes>
         </Router>
         <Toaster position="top-right" />
+        <Analytics />
         </ConfigProvider>
       </AuthProvider>
     </QueryClientProvider>
