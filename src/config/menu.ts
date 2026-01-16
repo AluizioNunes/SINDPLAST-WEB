@@ -1,0 +1,35 @@
+
+import {
+    Home,
+    Users,
+    Building2,
+    UserCircle,
+    Briefcase,
+    Shield,
+    Settings,
+    FileText,
+    Wrench,
+    Tags,
+    Package,
+    PieChart,
+    TrendingDown,
+    TrendingUp,
+} from 'lucide-react';
+
+export const SYSTEM_MENU_ITEMS = [
+    { id: 'dashboard', icon: Home, label: 'Dashboard', href: '/dashboard' },
+    { id: 'socios', icon: Users, label: 'Sócios', href: '/socios' },
+    { id: 'empresas', icon: Building2, label: 'Empresas', href: '/empresas' },
+    { id: 'dependentes', icon: UserCircle, label: 'Dependentes', href: '/dependentes' },
+    { id: 'funcionarios', icon: Briefcase, label: 'Funcionários', href: '/funcionarios' },
+    { id: 'funcoes', icon: Tags, label: 'Funções', href: '/funcoes' },
+    { id: 'ativos', icon: Package, label: 'Ativos', href: '/ativos' },
+    { id: 'centro-custos', icon: PieChart, label: 'Centro de Custos', href: '/centro-custos' },
+    { id: 'contas-pagar', icon: TrendingDown, label: 'Contas a Pagar', href: '/contas-pagar' },
+    { id: 'contas-receber', icon: TrendingUp, label: 'Contas a Receber', href: '/contas-receber' },
+    { id: 'usuarios', icon: Users, label: 'Usuários', href: '/usuarios' },
+    { id: 'perfil', icon: Shield, label: 'Perfil', href: '/perfil' },
+    { id: 'permissoes', icon: Settings, label: 'Permissões', href: '/permissoes' },
+    { id: 'relatorios', icon: FileText, label: 'Relatórios', href: '/relatorios' },
+    { id: 'ferramentas', icon: Wrench, label: 'Ferramentas', href: '/ferramentas' },
+];
