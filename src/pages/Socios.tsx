@@ -150,6 +150,7 @@ export default function Socios() {
     const handleSuccess = () => {
         queryClient.invalidateQueries({ queryKey: ['socios'] });
         queryClient.invalidateQueries({ queryKey: ['socioStats'] });
+        queryClient.invalidateQueries({ queryKey: ['socios-charts-data'] });
         setIsModalOpen(false);
         // Don't clear selectedSocio if just editing, maybe refresh it?
         // For simplicity, we keep it as is, or fetch updated data.

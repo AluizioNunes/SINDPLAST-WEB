@@ -221,6 +221,16 @@ export async function getSociosChartsData(opts: { period?: SociosChartsPeriod; d
     const monthKey = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
     const clampStartOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
     const clampEndOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    const parseDbTimestamp = (value: string) => {
+        const raw = String(value || '').trim();
+        if (!raw) return null;
+        const direct = new Date(raw);
+        if (!Number.isNaN(direct.getTime())) return direct;
+        const normalized = raw.replace(' ', 'T');
+        const d2 = new Date(normalized);
+        if (!Number.isNaN(d2.getTime())) return d2;
+        return null;
+    };
     const startOfWeek = (d: Date) => {
         const day = d.getDay(); // 0..6 (Sun..Sat)
         const diff = (day + 6) % 7; // Monday=0
@@ -320,8 +330,8 @@ export async function getSociosChartsData(opts: { period?: SociosChartsPeriod; d
 
     rows.forEach((r) => {
         if (!r.DataCadastro) return;
-        const d = new Date(r.DataCadastro);
-        if (Number.isNaN(d.getTime())) return;
+        const d = parseDbTimestamp(r.DataCadastro);
+        if (!d) return;
         if (windowStart && d < windowStart) return;
         if (windowEnd && d > windowEnd) return;
 
