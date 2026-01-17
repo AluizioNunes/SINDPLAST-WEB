@@ -55,7 +55,7 @@ export function mapSocioRow(row: Record<string, unknown>): Socio {
         ficha: (row.Ficha as boolean) ?? null,
         observacao: (row.Observacao as string) ?? null,
         telefone: (row.Telefone as string) ?? null,
-        empresa: (row.NomeFantasia as string) ?? (row.RazaoSocial as string) ?? null,
+        empresa: (row.RazaoSocial as string) ?? (row.NomeFantasia as string) ?? null,
         setor: (row.Setor as string) ?? null,
         imagem: normalizeSocioImageUrl(row.Imagem),
     }

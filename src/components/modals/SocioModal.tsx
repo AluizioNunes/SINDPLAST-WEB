@@ -833,7 +833,11 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
                             const isCompleted = currentStep > index;
 
                             return (
-                                <div key={step.id} className="relative z-10 flex flex-col items-center gap-2">
+                                <div
+                                    key={step.id}
+                                    className="relative z-10 flex flex-col items-center gap-2 cursor-pointer"
+                                    onClick={() => setCurrentStep(index)}
+                                >
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${isActive ? 'bg-purple-600 text-white shadow-lg ring-4 ring-purple-100 dark:ring-purple-900/30' :
                                         isCompleted ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
                                         }`}>

@@ -1,5 +1,15 @@
 import type { Empresa } from '@/lib/types/empresa'
 
+function normalizePublicImageUrl(value: unknown): string | null {
+    const s = value == null ? '' : String(value).trim();
+    if (!s) return null;
+    if (s.includes('/storage/v1/object/public/')) return s;
+    if (s.includes('/storage/v1/object/') && !s.includes('/storage/v1/object/public/')) {
+        return s.replace('/storage/v1/object/', '/storage/v1/object/public/');
+    }
+    return s;
+}
+
 export function mapEmpresaRow(row: Record<string, unknown>): Empresa {
     return {
         id: row.IdEmpresa as number,
@@ -28,5 +38,6 @@ export function mapEmpresaRow(row: Record<string, unknown>): Empresa {
         cadastrante: (row.Cadastrante as string) ?? '',
         observacao: (row.Observacao as string) ?? '',
         nSocios: 0, // Will be calculated separately if needed
+        imagem: normalizePublicImageUrl(row.Imagem),
     }
 }

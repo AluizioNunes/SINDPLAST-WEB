@@ -1,5 +1,15 @@
 import type { Funcionario } from '@/lib/types/funcionario'
 
+function normalizePublicImageUrl(value: unknown): string | null {
+    const s = value == null ? '' : String(value).trim();
+    if (!s) return null;
+    if (s.includes('/storage/v1/object/public/')) return s;
+    if (s.includes('/storage/v1/object/') && !s.includes('/storage/v1/object/public/')) {
+        return s.replace('/storage/v1/object/', '/storage/v1/object/public/');
+    }
+    return s;
+}
+
 export function mapFuncionarioRow(row: Record<string, unknown>): Funcionario {
     return {
         id: (row.id as number) || (row.FUNCIONARIO_ID as number) || (row.IdFuncionario as number) || 0,
@@ -13,5 +23,6 @@ export function mapFuncionarioRow(row: Record<string, unknown>): Funcionario {
         cargo: (row.cargo as string) || (row.Cargo as string) || (row.FUNCIONARIO_CBO as string) || '',
         dataAdmissao: (row.dataAdmissao as string) || (row.data_admissao as string) || (row.DataAdmissao as string) || undefined,
         empresaId: (row.empresaId as number) || (row.empresa_id as number) || (row.EmpresaId as number) || 0,
+        imagem: normalizePublicImageUrl((row as any).Imagem ?? (row as any).imagem),
     }
 }

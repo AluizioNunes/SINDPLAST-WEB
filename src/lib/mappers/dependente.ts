@@ -1,5 +1,15 @@
 import type { Dependente } from '@/lib/types/dependente'
 
+function normalizePublicImageUrl(value: unknown): string | undefined {
+    const s = value == null ? '' : String(value).trim();
+    if (!s) return undefined;
+    if (s.includes('/storage/v1/object/public/')) return s;
+    if (s.includes('/storage/v1/object/') && !s.includes('/storage/v1/object/public/')) {
+        return s.replace('/storage/v1/object/', '/storage/v1/object/public/');
+    }
+    return s;
+}
+
 export function mapDependenteRow(row: Record<string, unknown>): Dependente {
     return {
         id: row.IdDependente as number,
@@ -13,7 +23,7 @@ export function mapDependenteRow(row: Record<string, unknown>): Dependente {
         carteira: (row.Carteira as boolean) ?? false,
         dataCadastro: (row.DataCadastro as string) ?? '',
         cadastrante: (row.Cadastrante as string) ?? '',
-        imagem: (row.Imagem as string) ?? undefined,
+        imagem: normalizePublicImageUrl(row.Imagem),
         status: (row.Status as boolean) ?? undefined,
         flagOrfao: (row.FlagOrfao as boolean) ?? false,
     }

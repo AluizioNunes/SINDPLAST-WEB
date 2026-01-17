@@ -8,6 +8,7 @@ export interface Usuario {
     Perfil: string;
     Cadastrante: string;
     DataCadastro: string;
+    Imagem?: string | null;
     Senha?: string;
 }
 

@@ -31,6 +31,10 @@ import SociosReport from '@/pages/reports/SociosReport';
 import EmpresasReport from '@/pages/reports/EmpresasReport';
 import DependentesReport from '@/pages/reports/DependentesReport';
 import SocioFichaReport from '@/pages/reports/SocioFichaReport';
+import EmpresaFichaReport from '@/pages/reports/EmpresaFichaReport';
+import DependenteFichaReport from '@/pages/reports/DependenteFichaReport';
+import FuncionarioFichaReport from '@/pages/reports/FuncionarioFichaReport';
+import UsuarioFichaReport from '@/pages/reports/UsuarioFichaReport';
 
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -95,6 +99,10 @@ export default function App() {
             <Route path="/relatorios/print/empresas" element={<EmpresasReport />} />
             <Route path="/relatorios/print/dependentes" element={<DependentesReport />} />
             <Route path="/relatorios/print/socio/:id" element={<SocioFichaReport />} />
+            <Route path="/relatorios/print/empresa/:id" element={<EmpresaFichaReport />} />
+            <Route path="/relatorios/print/dependente/:id" element={<DependenteFichaReport />} />
+            <Route path="/relatorios/print/funcionario/:id" element={<FuncionarioFichaReport />} />
+            <Route path="/relatorios/print/usuario/:id" element={<UsuarioFichaReport />} />
             
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<DashboardLayout />}>

@@ -25,4 +25,5 @@ export interface Empresa {
     cadastrante: string;
     observacao: string;
     nSocios?: number;
+    imagem?: string | null;
 }

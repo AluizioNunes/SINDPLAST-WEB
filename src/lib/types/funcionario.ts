@@ -11,4 +11,5 @@ export interface Funcionario {
     cargo?: string; // Parece ser mapeado de CBO ou outro campo
     dataAdmissao?: string;
     empresaId?: number;
+    imagem?: string | null;
 }

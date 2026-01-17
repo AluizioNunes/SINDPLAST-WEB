@@ -63,6 +63,18 @@ export const SYSTEM_SCREENS = [
         ]
     },
     {
+        id: 'usuarios',
+        label: 'CADASTRO DE USUÁRIOS',
+        fields: [
+            { id: 'nome', label: 'NOME' },
+            { id: 'cpf', label: 'CPF' },
+            { id: 'funcao', label: 'FUNÇÃO' },
+            { id: 'email', label: 'EMAIL' },
+            { id: 'usuario', label: 'USUÁRIO (LOGIN)' },
+            { id: 'perfil', label: 'PERFIL' },
+        ]
+    },
+    {
         id: 'financeiro',
         label: 'FINANCEIRO (CONTAS)',
         fields: [
