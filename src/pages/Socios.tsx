@@ -522,8 +522,18 @@ export default function Socios() {
                                         <MiniChartCard title="Evolução: Sócios inativados" delay={0.1}>
                                             <EChart height="190px" options={lineOption('Inativados', chartsData?.evolution.labels || [], chartsData?.evolution.inativos || [], chartsYAxisMax)} />
                                         </MiniChartCard>
-                                    <MiniChartCard title="Sócios por sexo" delay={0.15}>
-                                        <EChart height="200px" options={pieOption('Sexo', chartsData?.bySexo || [])} />
+                                    <MiniChartCard title="Ativados x desativados" delay={0.15}>
+                                        <EChart
+                                            height="220px"
+                                            options={dualLineOption(
+                                                'ATIVADOS',
+                                                chartsData?.evolution.labels || [],
+                                                chartsData?.evolution.ativos || [],
+                                                'DESATIVADOS',
+                                                chartsData?.evolution.inativos || [],
+                                                chartsYAxisMax
+                                            )}
+                                        />
                                     </MiniChartCard>
                                     <MiniChartCard title="Sócios por empresa (Top 10)" delay={0.25}>
                                         <EChart height="240px" options={barOption('Empresa', chartsData?.byEmpresa || [], 240)} />
@@ -660,34 +670,81 @@ function lineOption(name: string, labels: string[], values: number[], yMax?: num
     };
 }
 
-function pieOption(title: string, data: Array<{ name: string; value: number }>) {
-    const upperTitle = String(title || '').toUpperCase();
-    const upperData = (data || []).map((d) => ({
-        name: String(d?.name || '').toUpperCase(),
-        value: d?.value ?? 0,
-    }));
+function dualLineOption(
+    leftName: string,
+    labels: string[],
+    leftValues: number[],
+    rightName: string,
+    rightValues: number[],
+    yMax?: number
+) {
+    const upperLeftName = String(leftName || '').toUpperCase();
+    const upperRightName = String(rightName || '').toUpperCase();
+    const upperLabels = (labels || []).map((l) => String(l || '').toUpperCase());
+    const combinedMaxValue = Math.max(
+        0,
+        ...(leftValues || []).map((v) => Number(v) || 0),
+        ...(rightValues || []).map((v) => Number(v) || 0)
+    );
+    const computedMax =
+        typeof yMax === 'number' ? yMax : combinedMaxValue <= 10 ? 10 : combinedMaxValue <= 100 ? 100 : combinedMaxValue <= 200 ? 200 : undefined;
+    const interval =
+        typeof computedMax === 'number'
+            ? computedMax <= 10
+                ? 1
+                : computedMax <= 100
+                ? 20
+                : computedMax <= 200
+                ? 50
+                : Math.ceil(computedMax / 5)
+            : undefined;
+
     return {
-        tooltip: { trigger: 'item' },
+        grid: { left: 10, right: 10, top: 34, bottom: 28, containLabel: true },
         legend: {
-            right: 8,
-            top: 'middle',
-            orient: 'vertical',
+            top: 6,
+            left: 8,
+            textStyle: { color: '#9CA3AF', fontSize: 10, fontWeight: 'bold' },
             formatter: (n: string) => String(n || '').toUpperCase(),
         },
+        xAxis: {
+            type: 'category',
+            data: upperLabels,
+            axisLabel: { color: '#9CA3AF', fontSize: 10, margin: 10 },
+            axisLine: { lineStyle: { color: 'rgba(156,163,175,0.25)' } },
+        },
+        yAxis: {
+            type: 'value',
+            axisLabel: { color: '#9CA3AF', fontSize: 10 },
+            splitLine: { lineStyle: { color: 'rgba(156,163,175,0.15)' } },
+            min: 0,
+            max: computedMax,
+            interval,
+        },
+        tooltip: { trigger: 'axis' },
         series: [
             {
-                name: upperTitle,
-                type: 'pie',
-                radius: ['35%', '70%'],
-                center: ['40%', '50%'],
-                avoidLabelOverlap: true,
-                itemStyle: { borderRadius: 10, borderColor: 'rgba(255,255,255,0.0)', borderWidth: 2 },
-                label: { show: false },
-                labelLine: { show: false },
-                data: upperData,
+                name: upperLeftName,
+                type: 'line',
+                smooth: true,
+                showSymbol: false,
+                data: leftValues,
+                lineStyle: { width: 3 },
+                areaStyle: { opacity: 0.08 },
+                emphasis: { focus: 'series' },
+            },
+            {
+                name: upperRightName,
+                type: 'line',
+                smooth: true,
+                showSymbol: false,
+                data: rightValues,
+                lineStyle: { width: 3 },
+                areaStyle: { opacity: 0.08 },
+                emphasis: { focus: 'series' },
             },
         ],
-        color: ['#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#14b8a6', '#e11d48', '#6366f1'],
+        color: ['#22c55e', '#ef4444', '#3b82f6', '#a855f7', '#f59e0b', '#14b8a6'],
     };
 }
 
