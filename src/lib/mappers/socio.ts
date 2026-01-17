@@ -1,5 +1,15 @@
 import type { Socio } from '@/lib/types/socio'
 
+function normalizeSocioImageUrl(value: unknown): string | null {
+    const s = value == null ? '' : String(value).trim();
+    if (!s) return null;
+    if (s.includes('/storage/v1/object/public/')) return s;
+    if (s.includes('/storage/v1/object/') && !s.includes('/storage/v1/object/public/')) {
+        return s.replace('/storage/v1/object/', '/storage/v1/object/public/');
+    }
+    return s;
+}
+
 export function mapSocioRow(row: Record<string, unknown>): Socio {
     return {
         id: row.IdSocio as number,
@@ -17,8 +27,12 @@ export function mapSocioRow(row: Record<string, unknown>): Socio {
         complemento: (row.Complemento as string) ?? null,
         bairro: (row.Bairro as string) ?? null,
         cep: (row.CEP as string) ?? null,
+        cidade: (row.Cidade as string) ?? null,
+        uf: (row.UF as string) ?? null,
         celular: (row.Celular as string) ?? null,
+        email: (row.Email as string) ?? null,
         redeSocial: (row.RedeSocial as string) ?? null,
+        linkRedeSocial: (row.LinkRedeSocial as string) ?? null,
         pai: (row.Pai as string) ?? null,
         mae: (row.Mae as string) ?? null,
         dataCadastro: (row.DataCadastro as string) ?? null,
@@ -43,6 +57,6 @@ export function mapSocioRow(row: Record<string, unknown>): Socio {
         telefone: (row.Telefone as string) ?? null,
         empresa: (row.NomeFantasia as string) ?? (row.RazaoSocial as string) ?? null,
         setor: (row.Setor as string) ?? null,
-        imagem: (row.Imagem as string) ?? null,
+        imagem: normalizeSocioImageUrl(row.Imagem),
     }
 }

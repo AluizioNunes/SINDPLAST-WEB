@@ -14,8 +14,12 @@ export interface Socio {
     complemento: string | null;
     bairro: string | null;
     cep: string | null;
+    cidade: string | null;
+    uf: string | null;
     celular: string | null;
+    email: string | null;
     redeSocial: string | null;
+    linkRedeSocial: string | null;
     pai: string | null;
     mae: string | null;
     dataCadastro: string | null;

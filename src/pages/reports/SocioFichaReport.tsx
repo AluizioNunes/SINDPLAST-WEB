@@ -79,7 +79,7 @@ export default function SocioFichaReport() {
                     <Info label="Empresa" value={socio.empresa || socio.razaoSocial || '-'} />
                     <Info label="Função" value={socio.funcao || '-'} />
                     <Info label="Celular" value={socio.celular || '-'} />
-                    <Info label="Contato" value={socio.redeSocial || '-'} />
+                    <Info label="Email" value={socio.email || socio.redeSocial || '-'} />
                 </div>
             </div>
         </ReportLayout>

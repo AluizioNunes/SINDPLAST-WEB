@@ -23,8 +23,10 @@ import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
 import { Socio } from '@/lib/types/socio';
 import toast from 'react-hot-toast';
-import { createSocio, updateSocio, uploadSocioImage, updateSocioImage } from '@/lib/services/socioService';
+import { createSocio, updateSocio, uploadSocioImage, updateSocioImage, socioCpfExists } from '@/lib/services/socioService';
 import { getEmpresas } from '@/lib/services/empresaService';
+import SearchableSelect from '@/components/ui/SearchableSelect';
+import { getUfOptions, getCitiesByUf } from '@/lib/ibgeLocalidades';
 
 interface SocioModalProps {
     isOpen: boolean;
@@ -40,12 +42,6 @@ const steps = [
     { id: 'profissional', title: 'Dados Sindicais', icon: Briefcase },
 ];
 
-const UF_LIST = [
-    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
-    'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
-    'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-];
-
 const formatCNPJ = (value: string) => {
     const cnpj = value.replace(/\D/g, '');
     if (cnpj.length <= 2) return cnpj;
@@ -54,6 +50,76 @@ const formatCNPJ = (value: string) => {
     if (cnpj.length <= 12) return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8)}`;
     return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12, 14)}`;
 };
+
+const formatCPF = (value: string) => {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+};
+
+const isValidCPF = (cpf: string) => {
+    const digits = String(cpf || '').replace(/\D/g, '');
+    if (digits.length !== 11) return false;
+    if (/^(\d)\1+$/.test(digits)) return false;
+
+    const calc = (base: string, factor: number) => {
+        let total = 0;
+        for (let i = 0; i < base.length; i++) {
+            total += Number(base[i]) * (factor - i);
+        }
+        const mod = total % 11;
+        return mod < 2 ? 0 : 11 - mod;
+    };
+
+    const d1 = calc(digits.slice(0, 9), 10);
+    const d2 = calc(digits.slice(0, 10), 11);
+    return digits[9] === String(d1) && digits[10] === String(d2);
+};
+
+const formatPhoneBR = (value: string) => {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 2) return digits;
+    const ddd = digits.slice(0, 2);
+    const rest = digits.slice(2);
+    if (rest.length <= 4) return `(${ddd}) ${rest}`;
+    if (rest.length <= 8) return `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4)}`;
+    return `(${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}`;
+};
+
+const formatCepDisplay = (value: string) => {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}-${digits.slice(5, 8)}`;
+};
+
+const formatCepStorage = (value: string) => {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 8);
+    if (digits.length !== 8) return String(value || '');
+    return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+};
+
+const formatCurrencyBRL = (value: string) => {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (!digits) return '';
+    const cents = digits.padStart(3, '0');
+    const intPart = cents.slice(0, -2).replace(/^0+/, '') || '0';
+    const decPart = cents.slice(-2);
+    const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `R$ ${withThousands},${decPart}`;
+};
+
+const parseCurrencyBRL = (value: string) => {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (!digits) return null;
+    const cents = Number(digits);
+    if (Number.isNaN(cents)) return null;
+    return cents / 100;
+};
+
+const toUpperOrEmpty = (v: unknown) => (v == null ? '' : String(v).toUpperCase());
 
 export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioModalProps) {
     const [currentStep, setCurrentStep] = useState(0);
@@ -68,6 +134,16 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
         carteira: false,
         ficha: false,
     });
+    const [valorMensalidadeText, setValorMensalidadeText] = useState<string>('');
+    const [cpfError, setCpfError] = useState<string | null>(null);
+    const [cpfChecking, setCpfChecking] = useState(false);
+    const [cepLoading, setCepLoading] = useState(false);
+    const [redeSocialOptions, setRedeSocialOptions] = useState<Array<{ value: string; label: string }>>([
+        { value: 'LINKEDIN', label: 'LINKEDIN' },
+        { value: 'INSTAGRAM', label: 'INSTAGRAM' },
+        { value: 'FACEBOOK', label: 'FACEBOOK' },
+        { value: 'TIK TOK', label: 'TIK TOK' },
+    ]);
     const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [cameraOpen, setCameraOpen] = useState(false);
@@ -88,11 +164,64 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
     };
 
     useEffect(() => {
+        try {
+            const stored = localStorage.getItem('sindplast.redeSocialOptions');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed)) {
+                    const next = parsed
+                        .map((s) => String(s || '').toUpperCase())
+                        .filter(Boolean)
+                        .map((s) => ({ value: s, label: s }));
+                    if (next.length) setRedeSocialOptions(next);
+                }
+            }
+        } catch {
+            void 0;
+        }
+
         if (isOpen) {
             fetchEmpresas();
         }
         if (socio) {
-            setFormData(socio);
+            setFormData({
+                ...socio,
+                nome: socio.nome ? toUpperOrEmpty(socio.nome) : socio.nome,
+                rg: socio.rg ? toUpperOrEmpty(socio.rg) : socio.rg,
+                emissor: socio.emissor ? toUpperOrEmpty(socio.emissor) : socio.emissor,
+                sexo: socio.sexo ? toUpperOrEmpty(socio.sexo) : socio.sexo,
+                naturalidade: socio.naturalidade ? toUpperOrEmpty(socio.naturalidade) : socio.naturalidade,
+                naturalidadeUF: socio.naturalidadeUF ? toUpperOrEmpty(socio.naturalidadeUF) : socio.naturalidadeUF,
+                nacionalidade: socio.nacionalidade ? toUpperOrEmpty(socio.nacionalidade) : socio.nacionalidade,
+                estadoCivil: socio.estadoCivil ? toUpperOrEmpty(socio.estadoCivil) : socio.estadoCivil,
+                endereco: socio.endereco ? toUpperOrEmpty(socio.endereco) : socio.endereco,
+                complemento: socio.complemento ? toUpperOrEmpty(socio.complemento) : socio.complemento,
+                bairro: socio.bairro ? toUpperOrEmpty(socio.bairro) : socio.bairro,
+                pai: socio.pai ? toUpperOrEmpty(socio.pai) : socio.pai,
+                mae: socio.mae ? toUpperOrEmpty(socio.mae) : socio.mae,
+                status: socio.status ? toUpperOrEmpty(socio.status) : socio.status,
+                matricula: socio.matricula ? toUpperOrEmpty(socio.matricula) : socio.matricula,
+                ctps: socio.ctps ? toUpperOrEmpty(socio.ctps) : socio.ctps,
+                funcao: socio.funcao ? toUpperOrEmpty(socio.funcao) : socio.funcao,
+                codEmpresa: socio.codEmpresa ? toUpperOrEmpty(socio.codEmpresa) : socio.codEmpresa,
+                razaoSocial: socio.razaoSocial ? toUpperOrEmpty(socio.razaoSocial) : socio.razaoSocial,
+                nomeFantasia: socio.nomeFantasia ? toUpperOrEmpty(socio.nomeFantasia) : socio.nomeFantasia,
+                motivoDemissao: socio.motivoDemissao ? toUpperOrEmpty(socio.motivoDemissao) : socio.motivoDemissao,
+                observacao: socio.observacao ? toUpperOrEmpty(socio.observacao) : socio.observacao,
+                empresa: socio.empresa ? toUpperOrEmpty(socio.empresa) : socio.empresa,
+                setor: socio.setor ? toUpperOrEmpty(socio.setor) : socio.setor,
+                cpf: socio.cpf ? formatCPF(socio.cpf) : socio.cpf,
+                cep: socio.cep ? formatCepDisplay(socio.cep) : socio.cep,
+                cidade: socio.cidade ? toUpperOrEmpty(socio.cidade) : socio.cidade,
+                uf: socio.uf ? toUpperOrEmpty(socio.uf) : socio.uf,
+                telefone: socio.telefone ? formatPhoneBR(socio.telefone) : socio.telefone,
+                celular: socio.celular ? formatPhoneBR(socio.celular) : socio.celular,
+                email: socio.email ? String(socio.email).toLowerCase() : socio.email,
+                cnpj: socio.cnpj ? formatCNPJ(socio.cnpj) : socio.cnpj,
+                redeSocial: socio.redeSocial ? toUpperOrEmpty(socio.redeSocial) : socio.redeSocial,
+                linkRedeSocial: socio.linkRedeSocial || '',
+            });
+            setValorMensalidadeText(socio.valorMensalidade != null ? formatCurrencyBRL(String(Math.round(Number(socio.valorMensalidade) * 100))) : '');
         } else {
             setFormData({
                 status: 'ATIVO',
@@ -103,6 +232,7 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
                 carteira: false,
                 ficha: false,
             });
+            setValorMensalidadeText('');
         }
         setCurrentStep(0);
         setPhotoFile(null);
@@ -110,7 +240,48 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
         setCameraOpen(false);
         setCameraError(null);
         setPhotoPreviewUrl(socio?.imagem || null);
+        setCpfError(null);
+        setCpfChecking(false);
     }, [socio, isOpen]);
+
+    useEffect(() => {
+        const cpfDigits = String(formData.cpf || '').replace(/\D/g, '');
+        if (!isOpen) return;
+        if (!cpfDigits) {
+            setCpfError(null);
+            setCpfChecking(false);
+            return;
+        }
+        if (cpfDigits.length < 11) {
+            setCpfError(null);
+            setCpfChecking(false);
+            return;
+        }
+        if (!isValidCPF(cpfDigits)) {
+            setCpfError('CPF inválido');
+            setCpfChecking(false);
+            return;
+        }
+
+        let cancelled = false;
+        const t = window.setTimeout(async () => {
+            try {
+                setCpfChecking(true);
+                const exists = await socioCpfExists(cpfDigits, socio?.id);
+                if (cancelled) return;
+                setCpfError(exists ? 'CPF já cadastrado' : null);
+            } catch {
+                if (cancelled) return;
+                setCpfError(null);
+            } finally {
+                if (!cancelled) setCpfChecking(false);
+            }
+        }, 450);
+        return () => {
+            cancelled = true;
+            window.clearTimeout(t);
+        };
+    }, [formData.cpf, isOpen, socio?.id]);
 
     useEffect(() => {
         if (!cameraOpen) return;
@@ -189,6 +360,59 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
         if (type === 'checkbox') {
             const checked = (e.target as HTMLInputElement).checked;
             setFormData(prev => ({ ...prev, [name]: checked }));
+            return;
+        }
+
+        if (name === 'cpf') {
+            const masked = formatCPF(value);
+            setFormData((prev) => ({ ...prev, cpf: masked }));
+            return;
+        }
+
+        if (name === 'cep') {
+            const masked = formatCepDisplay(value);
+            setFormData((prev) => ({ ...prev, cep: masked }));
+
+            const digits = masked.replace(/\D/g, '');
+            if (digits.length === 8) {
+                setCepLoading(true);
+                fetch(`https://viacep.com.br/ws/${digits}/json/`)
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data?.erro) {
+                            toast.error('CEP não encontrado');
+                            return;
+                        }
+                        const logradouro = String(data?.logradouro || '').toUpperCase();
+                        const bairro = String(data?.bairro || '').toUpperCase();
+                        const cidade = String(data?.localidade || '').toUpperCase();
+                        const uf = String(data?.uf || '').toUpperCase();
+
+                        setFormData((prev) => ({
+                            ...prev,
+                            endereco: logradouro || prev.endereco || '',
+                            bairro: bairro || prev.bairro || '',
+                            cidade: cidade || prev.cidade || '',
+                            uf: uf || prev.uf || '',
+                        }));
+                    })
+                    .catch(() => {
+                        toast.error('Erro ao buscar CEP');
+                    })
+                    .finally(() => setCepLoading(false));
+            }
+            return;
+        }
+
+        if (name === 'telefone' || name === 'celular') {
+            const masked = formatPhoneBR(value);
+            setFormData((prev) => ({ ...prev, [name]: masked }));
+            return;
+        }
+
+        if (name === 'email') {
+            setFormData((prev) => ({ ...prev, email: String(value || '').toLowerCase() }));
+            return;
         } else if (name === 'cnpj') {
             const formattedCNPJ = formatCNPJ(value);
             const cleanCNPJ = formattedCNPJ.replace(/\D/g, '');
@@ -198,15 +422,24 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
                 setFormData(prev => ({
                     ...prev,
                     cnpj: formattedCNPJ,
-                    nomeFantasia: found.nomeFantasia,
-                    razaoSocial: found.razaoSocial,
+                    nomeFantasia: (found.nomeFantasia || '').toUpperCase(),
+                    razaoSocial: (found.razaoSocial || '').toUpperCase(),
                     codEmpresa: found.id.toString()
                 }));
             } else {
                 setFormData(prev => ({ ...prev, cnpj: formattedCNPJ }));
             }
         } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
+            const upperExcept = new Set([
+                'nascimento',
+                'dataCadastro',
+                'dataMensalidade',
+                'dataAdmissao',
+                'dataDemissao',
+                'linkRedeSocial',
+            ]);
+            const nextValue = upperExcept.has(name) ? value : String(value || '').toUpperCase();
+            setFormData(prev => ({ ...prev, [name]: nextValue }));
         }
     };
 
@@ -216,9 +449,9 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
         if (found) {
             setFormData(prev => ({
                 ...prev,
-                nomeFantasia: found.nomeFantasia,
-                razaoSocial: found.razaoSocial,
-                cnpj: found.cnpj,
+                nomeFantasia: (found.nomeFantasia || '').toUpperCase(),
+                razaoSocial: (found.razaoSocial || '').toUpperCase(),
+                cnpj: formatCNPJ(found.cnpj || ''),
                 codEmpresa: found.id.toString()
             }));
         } else {
@@ -247,14 +480,45 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
     const handleSubmit = async () => {
         setLoading(true);
         try {
+            const cpfDigits = String(formData.cpf || '').replace(/\D/g, '');
+            if (cpfDigits) {
+                if (cpfDigits.length !== 11 || !isValidCPF(cpfDigits)) {
+                    toast.error('CPF inválido');
+                    setLoading(false);
+                    return;
+                }
+                const exists = await socioCpfExists(cpfDigits, socio?.id);
+                if (exists) {
+                    toast.error('CPF já cadastrado');
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            const valorMensalidade = parseCurrencyBRL(valorMensalidadeText);
+            const payload: Partial<Socio> = {
+                ...formData,
+                cpf: formData.cpf ? formatCPF(formData.cpf) : formData.cpf,
+                cep: formData.cep ? formatCepStorage(formData.cep) : formData.cep,
+                telefone: formData.telefone ? formatPhoneBR(formData.telefone) : formData.telefone,
+                celular: formData.celular ? formatPhoneBR(formData.celular) : formData.celular,
+                email: formData.email ? String(formData.email).toLowerCase() : formData.email,
+                valorMensalidade: valorMensalidade ?? null,
+            };
+
             const saved = socio
-                ? await updateSocio(socio.id, formData)
-                : await createSocio(formData);
+                ? await updateSocio(socio.id, payload)
+                : await createSocio(payload);
 
             if (photoFile || capturedBlob) {
-                const fileOrBlob = (photoFile ?? capturedBlob) as Blob;
-                const url = await uploadSocioImage(saved.id, fileOrBlob);
-                await updateSocioImage(saved.id, url);
+                try {
+                    const fileOrBlob = (photoFile ?? capturedBlob) as Blob;
+                    const url = await uploadSocioImage(saved.id, fileOrBlob);
+                    await updateSocioImage(saved.id, url);
+                } catch (e) {
+                    const message = e instanceof Error ? e.message : String(e);
+                    toast.error(`Foto não enviada: ${message}`);
+                }
             }
 
             toast.success(socio ? 'Sócio atualizado!' : 'Sócio cadastrado!');
@@ -336,12 +600,43 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
                             <div className="md:col-span-8 space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input label="Nome Completo" name="nome" value={formData.nome || ''} onChange={handleChange} placeholder="NOME COMPLETO" required uppercase />
-                            <Input label="CPF" name="cpf" value={formData.cpf || ''} onChange={handleChange} placeholder="000.000.000-00" />
+                            <Input
+                                label="CPF"
+                                name="cpf"
+                                value={formData.cpf || ''}
+                                onChange={handleChange}
+                                placeholder="000.000.000-00"
+                                maxLength={14}
+                                error={cpfError || undefined}
+                                helperText={cpfChecking ? 'Verificando CPF...' : undefined}
+                            />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <Input label="Data Nascimento" name="nascimento" type="date" value={formData.nascimento || ''} onChange={handleChange} />
-                            <Input label="RG" name="rg" value={formData.rg || ''} onChange={handleChange} placeholder="Nº IDENTIDADE" />
+                            <Input label="RG" name="rg" value={formData.rg || ''} onChange={handleChange} placeholder="Nº IDENTIDADE" uppercase />
                             <Input label="Órgão Emissor" name="emissor" value={formData.emissor || ''} onChange={handleChange} placeholder="SSP/AM" uppercase />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select
+                                label="UF Naturalidade"
+                                name="naturalidadeUF"
+                                value={formData.naturalidadeUF || ''}
+                                onChange={(e) => {
+                                    const nextUf = String(e.target.value || '').toUpperCase();
+                                    setFormData((p) => ({ ...p, naturalidadeUF: nextUf, naturalidade: '' }));
+                                }}
+                                options={[{ value: '', label: 'SELECIONE' }, ...getUfOptions()]}
+                                uppercase
+                            />
+                            <SearchableSelect
+                                label="Naturalidade"
+                                value={formData.naturalidade || ''}
+                                onValueChange={(v) => setFormData((p) => ({ ...p, naturalidade: String(v || '').toUpperCase() }))}
+                                options={getCitiesByUf(formData.naturalidadeUF || '')}
+                                placeholder={formData.naturalidadeUF ? 'Selecione...' : 'Selecione UF primeiro'}
+                                disabled={!formData.naturalidadeUF}
+                                uppercase
+                            />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <Select label="Sexo" name="sexo" value={formData.sexo || ''} onChange={handleChange}>
@@ -378,12 +673,35 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
                             <Input label="Complemento" name="complemento" value={formData.complemento || ''} onChange={handleChange} placeholder="APTO, BLOCO..." uppercase />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Input label="CEP" name="cep" value={formData.cep || ''} onChange={handleChange} placeholder="00000-000" />
-                            <Input label="Naturalidade" name="naturalidade" value={formData.naturalidade || ''} onChange={handleChange} placeholder="CIDADE" uppercase />
-                            <Select label="UF Naturalidade" name="naturalidadeUF" value={formData.naturalidadeUF || ''} onChange={handleChange}>
-                                <option value="" className="text-black bg-white" style={{ color: '#000000', backgroundColor: '#ffffff' }}>Selecione</option>
-                                {UF_LIST.map(uf => <option key={uf} value={uf} className="text-black bg-white" style={{ color: '#000000', backgroundColor: '#ffffff' }}>{uf}</option>)}
-                            </Select>
+                            <Input
+                                label="CEP"
+                                name="cep"
+                                value={formData.cep || ''}
+                                onChange={handleChange}
+                                placeholder="00.000-000"
+                                maxLength={10}
+                                helperText={cepLoading ? 'Buscando CEP...' : undefined}
+                            />
+                            <SearchableSelect
+                                label="Cidade"
+                                value={formData.cidade || ''}
+                                onValueChange={(v) => setFormData((p) => ({ ...p, cidade: String(v || '').toUpperCase() }))}
+                                options={getCitiesByUf(formData.uf || '')}
+                                placeholder={formData.uf ? 'Selecione...' : 'Selecione UF primeiro'}
+                                disabled={!formData.uf}
+                                uppercase
+                            />
+                            <Select
+                                label="UF"
+                                name="uf"
+                                value={formData.uf || ''}
+                                onChange={(e) => {
+                                    const nextUf = String(e.target.value || '').toUpperCase();
+                                    setFormData((p) => ({ ...p, uf: nextUf, cidade: '' }));
+                                }}
+                                options={[{ value: '', label: 'SELECIONE' }, ...getUfOptions()]}
+                                uppercase
+                            />
                         </div>
                     </div>
                 );
@@ -391,10 +709,50 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
                 return (
                     <div className="space-y-4 animate-fade-in text-gray-900 dark:text-gray-100">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Celular" name="celular" value={formData.celular || ''} onChange={handleChange} placeholder="(92) 90000-0000" />
-                            <Input label="Telefone Fixo" name="telefone" value={formData.telefone || ''} onChange={handleChange} placeholder="(92) 3000-0000" />
+                            <Input label="Telefone" name="telefone" value={formData.telefone || ''} onChange={handleChange} placeholder="(00) 00000-0000" maxLength={15} />
+                            <Input label="Celular" name="celular" value={formData.celular || ''} onChange={handleChange} placeholder="(00) 00000-0000" />
                         </div>
-                        <Input label="Rede Social / Email" name="redeSocial" value={formData.redeSocial || ''} onChange={handleChange} placeholder="@perfil ou email" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input
+                                label="Email"
+                                name="email"
+                                type="email"
+                                value={formData.email || ''}
+                                onChange={handleChange}
+                                placeholder="email@dominio.com"
+                                className="lowercase"
+                            />
+                            <SearchableSelect
+                                label="Rede Social"
+                                value={formData.redeSocial || ''}
+                                onValueChange={(v) => setFormData((p) => ({ ...p, redeSocial: String(v || '').toUpperCase() }))}
+                                options={redeSocialOptions}
+                                placeholder="Selecione..."
+                                allowCreate
+                                uppercase
+                                onCreateOption={(v) => {
+                                    const next = String(v || '').toUpperCase();
+                                    if (!next) return;
+                                    setRedeSocialOptions((prev) => {
+                                        const merged = [...prev, { value: next, label: next }].filter(Boolean);
+                                        const uniq = Array.from(new Map(merged.map((o) => [o.value, o])).values()).sort((a, b) => a.label.localeCompare(b.label));
+                                        try {
+                                            localStorage.setItem('sindplast.redeSocialOptions', JSON.stringify(uniq.map((o) => o.value)));
+                                        } catch {
+                                            void 0;
+                                        }
+                                        return uniq;
+                                    });
+                                }}
+                            />
+                        </div>
+                        <Input
+                            label="Link Rede Social"
+                            name="linkRedeSocial"
+                            value={formData.linkRedeSocial || ''}
+                            onChange={handleChange}
+                            placeholder="https://..."
+                        />
                     </div>
                 );
             case 3: // Profissional
@@ -421,13 +779,19 @@ export default function SocioModal({ isOpen, onClose, onSuccess, socio }: SocioM
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Input label="Matrícula" name="matricula" value={formData.matricula || ''} onChange={handleChange} placeholder="Nº MATRÍCULA" />
+                            <Input label="Matrícula" name="matricula" value={formData.matricula || ''} onChange={handleChange} placeholder="Nº MATRÍCULA" uppercase />
                             <Input label="Data Admissão" name="dataAdmissao" type="date" value={formData.dataAdmissao || ''} onChange={handleChange} />
-                            <Input label="Função" name="funcao" value={formData.funcao || ''} onChange={handleChange} placeholder="CARGO" />
+                            <Input label="Função" name="funcao" value={formData.funcao || ''} onChange={handleChange} placeholder="CARGO" uppercase />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Input label="Valor Mensalidade" name="valorMensalidade" type="number" value={formData.valorMensalidade?.toString() || ''} onChange={handleChange} placeholder="0.00" />
-                            <Input label="CTPS" name="ctps" value={formData.ctps || ''} onChange={handleChange} placeholder="Nº CARTEIRA TRABALHO" />
+                            <Input
+                                label="Valor da Mensalidade"
+                                name="valorMensalidade"
+                                value={valorMensalidadeText}
+                                onChange={(e) => setValorMensalidadeText(formatCurrencyBRL(e.target.value))}
+                                placeholder="R$ 0,00"
+                            />
+                            <Input label="CTPS" name="ctps" value={formData.ctps || ''} onChange={handleChange} placeholder="Nº CARTEIRA TRABALHO" uppercase />
                         </div>
                         <div className="flex gap-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
                             <label className="flex items-center gap-2 cursor-pointer">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shield, Check, ChevronRight, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -118,10 +118,49 @@ function PermissoesEditorInner({
     initialPermissions: PermissoesCompleta;
     queryClient: ReturnType<typeof useQueryClient>;
 }) {
+    const shouldAutoSelectAll =
+        Object.keys(initialPermissions.menus || {}).length === 0 &&
+        Object.keys(initialPermissions.campos || {}).length === 0;
+
+    const buildAllSelectedPermissions = () => {
+        const menus: Record<string, boolean> = {};
+        SYSTEM_MENU_ITEMS.forEach((m) => {
+            menus[m.id] = true;
+        });
+
+        const campos: Record<string, Record<string, { visualizar: boolean; editar: boolean }>> = {};
+        SYSTEM_SCREENS.forEach((s) => {
+            const fields: Record<string, { visualizar: boolean; editar: boolean }> = {};
+            s.fields.forEach((f) => {
+                fields[f.id] = { visualizar: true, editar: true };
+            });
+            campos[s.id] = fields;
+        });
+
+        return { menus, campos };
+    };
+
     const [activeTab, setActiveTab] = useState<'menus' | 'telas'>('menus');
-    const [expandedScreens, setExpandedScreens] = useState<string[]>([]);
-    const [localPermissions, setLocalPermissions] = useState<PermissoesCompleta>(initialPermissions);
-    const [hasChanges, setHasChanges] = useState(false);
+    const [expandedScreens, setExpandedScreens] = useState<string[]>(() =>
+        shouldAutoSelectAll ? SYSTEM_SCREENS.map((s) => s.id) : [],
+    );
+    const [localPermissions, setLocalPermissions] = useState<PermissoesCompleta>(() =>
+        shouldAutoSelectAll ? buildAllSelectedPermissions() : initialPermissions,
+    );
+    const [hasChanges, setHasChanges] = useState(() => shouldAutoSelectAll);
+
+    const allMenusSelected = useMemo(() => {
+        return SYSTEM_MENU_ITEMS.every((m) => localPermissions.menus[m.id]);
+    }, [localPermissions.menus]);
+
+    const allCamposSelected = useMemo(() => {
+        return SYSTEM_SCREENS.every((s) =>
+            s.fields.every((f) => {
+                const perms = localPermissions.campos[s.id]?.[f.id];
+                return perms?.visualizar && perms?.editar;
+            }),
+        );
+    }, [localPermissions.campos]);
 
     const saveMutation = useMutation({
         mutationFn: () => saveAllPermissoes(perfilId, localPermissions),
@@ -148,11 +187,68 @@ function PermissoesEditorInner({
         'contas-receber': ['financeiro'],
     };
 
+    const getScreensForMenu = (menuId: string) => {
+        const inferredScreens = SYSTEM_SCREENS.some((s) => s.id === menuId) ? [menuId] : [];
+        return menuToScreens[menuId] || inferredScreens;
+    };
+
+    const selectAllMenus = () => {
+        setLocalPermissions((prev) => {
+            const nextMenus: Record<string, boolean> = { ...prev.menus };
+            const screensToEnable = new Set<string>();
+
+            SYSTEM_MENU_ITEMS.forEach((m) => {
+                nextMenus[m.id] = true;
+                getScreensForMenu(m.id).forEach((s) => screensToEnable.add(s));
+            });
+
+            const nextCampos = { ...prev.campos };
+            screensToEnable.forEach((screenId) => {
+                const screen = SYSTEM_SCREENS.find((s) => s.id === screenId);
+                if (!screen) return;
+                const updatedFields: Record<string, { visualizar: boolean; editar: boolean }> = {};
+                screen.fields.forEach((f) => {
+                    updatedFields[f.id] = { visualizar: true, editar: true };
+                });
+                nextCampos[screenId] = updatedFields;
+            });
+
+            setExpandedScreens((prevExpanded) => Array.from(new Set([...prevExpanded, ...Array.from(screensToEnable)])));
+
+            return {
+                ...prev,
+                menus: nextMenus,
+                campos: nextCampos,
+            };
+        });
+        setHasChanges(true);
+    };
+
+    const selectAllCamposTelas = () => {
+        setLocalPermissions((prev) => {
+            const nextCampos: Record<string, Record<string, { visualizar: boolean; editar: boolean }>> = {};
+            SYSTEM_SCREENS.forEach((s) => {
+                const fields: Record<string, { visualizar: boolean; editar: boolean }> = {};
+                s.fields.forEach((f) => {
+                    fields[f.id] = { visualizar: true, editar: true };
+                });
+                nextCampos[s.id] = fields;
+            });
+
+            setExpandedScreens(SYSTEM_SCREENS.map((s) => s.id));
+
+            return {
+                ...prev,
+                campos: nextCampos,
+            };
+        });
+        setHasChanges(true);
+    };
+
     const handleMenuToggle = (menuId: string) => {
         setLocalPermissions((prev) => {
             const nextAllowed = !prev.menus[menuId];
-            const inferredScreens = SYSTEM_SCREENS.some((s) => s.id === menuId) ? [menuId] : [];
-            const screens = menuToScreens[menuId] || inferredScreens;
+            const screens = getScreensForMenu(menuId);
 
             if (screens.length === 0) {
                 return {
@@ -224,18 +320,40 @@ function PermissoesEditorInner({
         <>
             <div className="p-4 border-b border-white/10 bg-gradient-to-r from-red-600 to-red-800 flex items-center justify-between">
                 <h2 className="font-black text-white uppercase text-sm tracking-wide">Permissões</h2>
-                <Button
-                    onClick={() => saveMutation.mutate()}
-                    disabled={!hasChanges || saveMutation.isPending}
-                    variant={hasChanges ? 'primary' : 'secondary'}
-                >
-                    {saveMutation.isPending ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    ) : (
-                        <Save className="w-4 h-4 mr-2" />
-                    )}
-                    Salvar Alterações
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={selectAllMenus}
+                        disabled={saveMutation.isPending || allMenusSelected}
+                        className="border border-white/20 bg-white/10 text-white hover:bg-white/15 focus:ring-white/20 focus:ring-offset-0"
+                    >
+                        Selecione todos os itens de menu
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={selectAllCamposTelas}
+                        disabled={saveMutation.isPending || allCamposSelected}
+                        className="border border-white/20 bg-white/10 text-white hover:bg-white/15 focus:ring-white/20 focus:ring-offset-0"
+                    >
+                        Selecione todos os campos e telas
+                    </Button>
+                    <Button
+                        onClick={() => saveMutation.mutate()}
+                        disabled={!hasChanges || saveMutation.isPending}
+                        variant={hasChanges ? 'primary' : 'secondary'}
+                        size="sm"
+                        className={hasChanges ? 'bg-white text-red-700 hover:bg-white/90 focus:ring-white/30 focus:ring-offset-0' : 'focus:ring-offset-0'}
+                    >
+                        {saveMutation.isPending ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        ) : (
+                            <Save className="w-4 h-4 mr-2" />
+                        )}
+                        Salvar Alterações
+                    </Button>
+                </div>
             </div>
 
             <div className="flex border-b border-gray-200 dark:border-gray-800">

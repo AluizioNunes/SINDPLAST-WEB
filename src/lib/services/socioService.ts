@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { mapSocioRow } from '@/lib/mappers/socio';
 import { Socio } from '@/lib/types/socio';
+import { uploadPublicFile } from '@/lib/upload/uploadPublicFile';
 
 interface GetSociosOptions {
     page?: number;
@@ -130,8 +131,12 @@ export async function createSocio(socioData: Partial<Socio>): Promise<Socio> {
         Complemento: socioData.complemento,
         Bairro: socioData.bairro,
         CEP: socioData.cep,
+        Cidade: socioData.cidade,
+        UF: socioData.uf,
         Celular: socioData.celular,
+        Email: socioData.email,
         RedeSocial: socioData.redeSocial,
+        LinkRedeSocial: socioData.linkRedeSocial,
         Pai: socioData.pai,
         Mae: socioData.mae,
         Matricula: socioData.matricula,
@@ -168,15 +173,13 @@ export async function uploadSocioImage(socioId: number, file: Blob): Promise<str
     const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg';
     const path = `socios/${socioId}/${Date.now()}.${safeExt}`;
 
-    const { error: uploadError } = await supabase
-        .storage
-        .from('socios-images')
-        .upload(path, file, { upsert: true, contentType: (file as any).type || 'image/jpeg' });
-
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage.from('socios-images').getPublicUrl(path);
-    return data.publicUrl;
+    return uploadPublicFile({
+        bucket: 'socios-images',
+        path,
+        file,
+        contentType: (file as any).type || 'image/jpeg',
+        upsert: true,
+    });
 }
 
 export async function updateSocioImage(id: number, imagem: string | null): Promise<void> {
@@ -195,19 +198,10 @@ export async function getSociosChartsData(opts: { period?: SociosChartsPeriod; d
     bySetor: Array<{ name: string; value: number }>;
     byEmpresa: Array<{ name: string; value: number }>;
 }> {
-    const pick = 'DataCadastro,Status,Sexo,Setor,NomeFantasia,RazaoSocial';
-    let { data, error } = await supabase
-        .from('Socios')
-        .select(pick);
-
+    const { data, error } = await supabase.from('Socios').select('*');
     if (error) {
-        const fallback = await supabase.from('Socios').select('*');
-        if (fallback.error) {
-            console.error('Error fetching socios charts data:', fallback.error);
-            throw new Error('Failed to fetch socios charts data');
-        }
-        data = fallback.data;
-        error = null;
+        console.error('Error fetching socios charts data:', error);
+        throw new Error('Failed to fetch socios charts data');
     }
 
     const rows = (data || []) as Array<{
@@ -397,6 +391,23 @@ export async function getSocioStats() {
     };
 }
 
+export async function socioCpfExists(cpf: string, excludeId?: number): Promise<boolean> {
+    const rawDigits = String(cpf || '').replace(/\D/g, '').slice(0, 11);
+    if (rawDigits.length !== 11) return false;
+    const formatted = `${rawDigits.slice(0, 3)}.${rawDigits.slice(3, 6)}.${rawDigits.slice(6, 9)}-${rawDigits.slice(9, 11)}`;
+
+    const base = supabase.from('Socios').select('IdSocio').limit(1);
+    const q1 = excludeId ? base.eq('CPF', formatted).neq('IdSocio', excludeId) : base.eq('CPF', formatted);
+    const { data: d1, error: e1 } = await q1;
+    if (e1) throw e1;
+    if (Array.isArray(d1) && d1.length > 0) return true;
+
+    const q2 = excludeId ? base.eq('CPF', rawDigits).neq('IdSocio', excludeId) : base.eq('CPF', rawDigits);
+    const { data: d2, error: e2 } = await q2;
+    if (e2) throw e2;
+    return Array.isArray(d2) && d2.length > 0;
+}
+
 export async function deleteSocio(id: number): Promise<void> {
     const { error } = await supabase
         .from('Socios')
@@ -424,8 +435,12 @@ export async function updateSocio(id: number, socioData: Partial<Socio>): Promis
         Complemento: socioData.complemento,
         Bairro: socioData.bairro,
         CEP: socioData.cep,
+        Cidade: socioData.cidade,
+        UF: socioData.uf,
         Celular: socioData.celular,
+        Email: socioData.email,
         RedeSocial: socioData.redeSocial,
+        LinkRedeSocial: socioData.linkRedeSocial,
         Pai: socioData.pai,
         Mae: socioData.mae,
         Matricula: socioData.matricula,

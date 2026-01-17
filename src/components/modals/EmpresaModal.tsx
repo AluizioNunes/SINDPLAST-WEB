@@ -9,6 +9,8 @@ import Button from '../ui/Button';
 import { Empresa } from '@/lib/types/empresa';
 import toast from 'react-hot-toast';
 import { createEmpresa, updateEmpresa } from '@/lib/services/empresaService';
+import SearchableSelect from '../ui/SearchableSelect';
+import { getUfOptions, getCitiesByUf } from '@/lib/ibgeLocalidades';
 
 interface EmpresaModalProps {
     isOpen: boolean;
@@ -102,24 +104,6 @@ export default function EmpresaModal({
         }
     };
 
-    const ufs = [
-        { value: '', label: 'Selecione...' },
-        { value: 'AC', label: 'AC' }, { value: 'AL', label: 'AL' },
-        { value: 'AP', label: 'AP' }, { value: 'AM', label: 'AM' },
-        { value: 'BA', label: 'BA' }, { value: 'CE', label: 'CE' },
-        { value: 'DF', label: 'DF' }, { value: 'ES', label: 'ES' },
-        { value: 'GO', label: 'GO' }, { value: 'MA', label: 'MA' },
-        { value: 'MT', label: 'MT' }, { value: 'MS', label: 'MS' },
-        { value: 'MG', label: 'MG' }, { value: 'PA', label: 'PA' },
-        { value: 'PB', label: 'PB' }, { value: 'PR', label: 'PR' },
-        { value: 'PE', label: 'PE' }, { value: 'PI', label: 'PI' },
-        { value: 'RJ', label: 'RJ' }, { value: 'RN', label: 'RN' },
-        { value: 'RS', label: 'RS' }, { value: 'RO', label: 'RO' },
-        { value: 'RR', label: 'RR' }, { value: 'SC', label: 'SC' },
-        { value: 'SP', label: 'SP' }, { value: 'SE', label: 'SE' },
-        { value: 'TO', label: 'TO' },
-    ];
-
     return (
         <BaseModal
             isOpen={isOpen}
@@ -190,16 +174,24 @@ export default function EmpresaModal({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
+                    <SearchableSelect
                         label="Cidade"
                         value={formData.cidade}
-                        onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
+                        onValueChange={(v) => setFormData((p) => ({ ...p, cidade: String(v || '').toUpperCase() }))}
+                        options={getCitiesByUf(formData.uf)}
+                        placeholder={formData.uf ? 'Selecione...' : 'Selecione UF primeiro'}
+                        disabled={!formData.uf}
+                        uppercase
                     />
                     <Select
                         label="UF"
                         value={formData.uf}
-                        onChange={(e) => setFormData({ ...formData, uf: e.target.value })}
-                        options={ufs}
+                        onChange={(e) => {
+                            const nextUf = String(e.target.value || '').toUpperCase();
+                            setFormData((p) => ({ ...p, uf: nextUf, cidade: '' }));
+                        }}
+                        options={[{ value: '', label: 'SELECIONE' }, ...getUfOptions()]}
+                        uppercase
                     />
                 </div>
 

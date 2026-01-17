@@ -96,10 +96,14 @@ export default function SociosFichaModal({ isOpen, onClose, socio, canViewField,
 
                     <Section title="Contato" icon={<Users className="w-4 h-4 text-red-600" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {canViewField('socios', 'celular') && <Field label="Celular" value={socio.celular} />}
-                            {canViewField('socios', 'email') && <Field label="Contato" value={socio.redeSocial} />}
                             {canViewField('socios', 'telefone') && <Field label="Telefone" value={socio.telefone} />}
+                            {canViewField('socios', 'celular') && <Field label="Celular" value={socio.celular} />}
+                            {canViewField('socios', 'email') && <Field label="Email" value={socio.email} />}
+                            {canViewField('socios', 'redeSocial') && <Field label="Rede Social" value={socio.redeSocial} />}
+                            {canViewField('socios', 'linkRedeSocial') && <Field label="Link Rede Social" value={socio.linkRedeSocial} />}
                             {canViewField('socios', 'cep') && <Field label="CEP" value={socio.cep} />}
+                            {canViewField('socios', 'cidade') && <Field label="Cidade" value={socio.cidade} />}
+                            {canViewField('socios', 'uf') && <Field label="UF" value={socio.uf} />}
                         </div>
                     </Section>
 
