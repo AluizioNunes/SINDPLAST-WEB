@@ -33,6 +33,7 @@ export default function Socios() {
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSocio, setSelectedSocio] = useState<Socio | null>(null);
+    const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
     const [isFichaModalOpen, setIsFichaModalOpen] = useState(false);
     const [previewSocioId, setPreviewSocioId] = useState<number | null>(null);
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
@@ -134,6 +135,7 @@ export default function Socios() {
 
     const handleEdit = useCallback((socio: Socio) => {
         setSelectedSocio(socio);
+        setSelectedRowId(socio.id);
         setIsModalOpen(true);
     }, []);
 
@@ -141,6 +143,7 @@ export default function Socios() {
         setIsFichaModalOpen(true);
         setPreviewSocioId(socio.id);
         setPreviewIndex(typeof index === 'number' ? index : null);
+        setSelectedRowId(socio.id);
     }, []);
 
     const handlePrint = useCallback((id: number) => {
@@ -191,6 +194,15 @@ export default function Socios() {
 
             e.preventDefault();
 
+            if (!isFichaModalOpen) {
+                const current = selectedRowId != null ? socios.findIndex((s) => s.id === selectedRowId) : -1;
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                let next = current === -1 ? (step === 1 ? 0 : socios.length - 1) : current + step;
+                next = Math.min(socios.length - 1, Math.max(0, next));
+                setSelectedRowId(socios[next].id);
+                return;
+            }
+
             const current =
                 previewSocioId != null
                     ? socios.findIndex((s) => s.id === previewSocioId)
@@ -228,7 +240,7 @@ export default function Socios() {
 
         window.addEventListener('keydown', handler, true);
         return () => window.removeEventListener('keydown', handler, true);
-    }, [handleFichaCadastral, handlePageChange, isModalOpen, isFichaModalOpen, socios, previewIndex, previewSocioId, page, totalPages]);
+    }, [handleFichaCadastral, handlePageChange, isModalOpen, isFichaModalOpen, socios, previewIndex, previewSocioId, page, selectedRowId, totalPages]);
 
     const maxNomeLen = useMemo(() => socios.reduce((acc, s) => Math.max(acc, (s.nome || '').length), 0), [socios]);
     const nomeSize = Math.min(900, Math.max(520, maxNomeLen * 9 + 64));
@@ -423,11 +435,14 @@ export default function Socios() {
                                 sortingState={sortingState}
                                 onSortingStateChange={handleSortingChange}
                                 total={data?.total || 0}
-                                onRowClick={(row) => {
+                                onRowClick={(row) => setSelectedRowId((row as any).id)}
+                                onRowDoubleClick={(row) => {
                                     const idx = socios.findIndex((s) => s.id === (row as any).id);
                                     handleFichaCadastral(row as any, idx >= 0 ? idx : undefined);
                                 }}
-                                highlightRowId={isFichaModalOpen ? (previewSocio?.id ?? null) : null}
+                                highlightRowId={selectedRowId}
+                                highlightRowClassName="bg-[#FF6347]"
+                                highlightCellClassName="text-white"
                                 getRowId={(r) => (r as any).id}
                                 searchValue={search}
                                 onSearchChange={handleSearch}

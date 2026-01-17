@@ -106,8 +106,11 @@ export default function Login() {
               <input
                 type="text"
                 value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                className="block w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl leading-5 bg-white/5 text-white placeholder-red-200/50 focus:outline-none focus:bg-white/10 focus:ring-2 focus:ring-white/20 focus:border-transparent transition-all"
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setIdentifier(v.includes('@') ? v : v.toUpperCase());
+                }}
+                className="block w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl leading-5 bg-white/5 text-white placeholder-red-200/50 focus:outline-none focus:bg-white/10 focus:ring-2 focus:ring-white/20 focus:border-transparent transition-all uppercase"
                 placeholder="Digite seu usuário ou email"
                 required
               />

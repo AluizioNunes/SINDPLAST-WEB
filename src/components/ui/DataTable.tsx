@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     useReactTable,
     getCoreRowModel,
@@ -60,8 +60,11 @@ export interface DataTableProps<TData> {
     onSortingStateChange?: (sorting: SortingState) => void;
     total?: number;
     onRowClick?: (row: TData) => void;
+    onRowDoubleClick?: (row: TData) => void;
     highlightRowId?: string | number | null;
     getRowId?: (row: TData) => string | number;
+    highlightRowClassName?: string;
+    highlightCellClassName?: string;
     actions?: React.ReactNode;
     searchValue?: string;
     onSearchChange?: (value: string) => void;
@@ -152,8 +155,11 @@ export default function DataTable<TData>({
     onSortingStateChange,
     total: _total,
     onRowClick,
+    onRowDoubleClick,
     highlightRowId,
     getRowId,
+    highlightRowClassName,
+    highlightCellClassName,
     actions,
     searchValue,
     onSearchChange,
@@ -235,6 +241,39 @@ export default function DataTable<TData>({
 
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
 
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (highlightRowId == null) return;
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const raf = window.requestAnimationFrame(() => {
+            const targetId = String(highlightRowId);
+            const rows = container.querySelectorAll<HTMLTableRowElement>('tr[data-rowid]');
+            let target: HTMLTableRowElement | null = null;
+            for (const r of Array.from(rows)) {
+                if (r.dataset.rowid === targetId) {
+                    target = r;
+                    break;
+                }
+            }
+            if (!target) return;
+
+            const c = container.getBoundingClientRect();
+            const r = target.getBoundingClientRect();
+            const pad = 12;
+
+            if (r.top < c.top + pad) {
+                container.scrollTop -= (c.top + pad - r.top);
+            } else if (r.bottom > c.bottom - pad) {
+                container.scrollTop += (r.bottom - (c.bottom - pad));
+            }
+        });
+
+        return () => window.cancelAnimationFrame(raf);
+    }, [highlightRowId, data.length]);
+
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         if (!active || !over || active.id === over.id) return;
@@ -314,7 +353,7 @@ export default function DataTable<TData>({
 
             {/* Table Container */}
             <div className="glass-card shadow-xl border border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm relative flex-1 min-h-0 flex flex-col overflow-hidden">
-                <div className="overflow-auto flex-1 min-h-0">
+                <div ref={scrollContainerRef} className="overflow-auto flex-1 min-h-0">
                     <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
@@ -341,15 +380,21 @@ export default function DataTable<TData>({
                                             return (
                                         <tr
                                             key={row.id}
+                                            data-rowid={rowKey == null ? undefined : String(rowKey)}
                                             onClick={() => onRowClick?.(row.original)}
-                                            className={`transition-colors group ${onRowClick ? 'cursor-pointer' : ''} ${isHighlighted ? 'bg-red-50/80 dark:bg-red-900/25' : 'hover:bg-red-50/30 dark:hover:bg-red-900/10'}`}
+                                            onDoubleClick={() => onRowDoubleClick?.(row.original)}
+                                            className={`transition-colors group ${(onRowClick || onRowDoubleClick) ? 'cursor-pointer' : ''} ${
+                                                isHighlighted
+                                                    ? (highlightRowClassName || 'bg-red-50/80 dark:bg-red-900/25')
+                                                    : 'hover:bg-red-50/30 dark:hover:bg-red-900/10'
+                                            }`}
                                         >
                                             {row.getVisibleCells().map((cell) => (
                                                 <td
                                                     key={cell.id}
                                                     className={`px-4 py-2 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 ${
                                                         (cell.column.columnDef as any)?.meta?.align === 'center' ? 'text-center' : 'text-left'
-                                                    }`}
+                                                    } ${isHighlighted && highlightCellClassName ? highlightCellClassName : ''}`}
                                                 >
                                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                 </td>

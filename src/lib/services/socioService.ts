@@ -198,13 +198,50 @@ export async function getSociosChartsData(opts: { period?: SociosChartsPeriod; d
     bySetor: Array<{ name: string; value: number }>;
     byEmpresa: Array<{ name: string; value: number }>;
 }> {
-    const { data, error } = await supabase.from('Socios').select('*');
-    if (error) {
-        console.error('Error fetching socios charts data:', error);
+    const pick = 'IdSocio,DataCadastro,Status,Sexo,Setor,NomeFantasia,RazaoSocial';
+
+    const head = await supabase.from('Socios').select('IdSocio', { count: 'exact', head: true });
+    if (head.error) {
+        console.error('Error counting socios charts data:', head.error);
         throw new Error('Failed to fetch socios charts data');
     }
 
-    const rows = (data || []) as Array<{
+    const total = head.count || 0;
+    const chunkSize = 1000;
+    const chunks = Math.max(1, Math.ceil(total / chunkSize));
+    const allRows: any[] = [];
+
+    for (let i = 0; i < chunks; i++) {
+        const from = i * chunkSize;
+        const to = Math.min(total - 1, from + chunkSize - 1);
+
+        const res = await supabase
+            .from('Socios')
+            .select(pick)
+            .order('IdSocio', { ascending: false })
+            .range(from, to);
+
+        if (res.error) {
+            const fallback = await supabase
+                .from('Socios')
+                .select('*')
+                .order('IdSocio', { ascending: false })
+                .range(from, to);
+
+            if (fallback.error) {
+                console.error('Error fetching socios charts data:', fallback.error);
+                throw new Error('Failed to fetch socios charts data');
+            }
+
+            allRows.push(...(fallback.data || []));
+            continue;
+        }
+
+        allRows.push(...(res.data || []));
+    }
+
+    const rows = (allRows || []) as Array<{
+        IdSocio?: number | null;
         DataCadastro?: string | null;
         Status?: string | null;
         Sexo?: string | null;
@@ -224,10 +261,23 @@ export async function getSociosChartsData(opts: { period?: SociosChartsPeriod; d
     const parseDbTimestamp = (value: string) => {
         const raw = String(value || '').trim();
         if (!raw) return null;
-        const direct = new Date(raw);
+        const dateOnlyBr = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw);
+        if (dateOnlyBr) {
+            const dd = Number(dateOnlyBr[1]);
+            const mm = Number(dateOnlyBr[2]);
+            const yyyy = Number(dateOnlyBr[3]);
+            const d = new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+            return Number.isNaN(d.getTime()) ? null : d;
+        }
+
+        const needsUtc =
+            /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(raw) &&
+            !/[zZ]|[+-]\d{2}:\d{2}$/.test(raw);
+
+        const direct = new Date(needsUtc ? raw.replace(' ', 'T') + 'Z' : raw);
         if (!Number.isNaN(direct.getTime())) return direct;
         const normalized = raw.replace(' ', 'T');
-        const d2 = new Date(normalized);
+        const d2 = new Date(needsUtc ? normalized + 'Z' : normalized);
         if (!Number.isNaN(d2.getTime())) return d2;
         return null;
     };
@@ -329,20 +379,20 @@ export async function getSociosChartsData(opts: { period?: SociosChartsPeriod; d
     const empresaMap = new Map<string, number>();
 
     rows.forEach((r) => {
+        const status = (r.Status || 'INDEFINIDO').toString().toUpperCase().trim();
+        const sexo = (r.Sexo || 'NÃO INFORMADO').toString().toUpperCase().trim();
+        const setor = (r.Setor || 'SEM SETOR').toString().toUpperCase().trim();
+        const empresa = (r.NomeFantasia || r.RazaoSocial || 'SEM EMPRESA').toString().toUpperCase().trim();
+
+        sexoMap.set(sexo, (sexoMap.get(sexo) || 0) + 1);
+        setorMap.set(setor, (setorMap.get(setor) || 0) + 1);
+        empresaMap.set(empresa, (empresaMap.get(empresa) || 0) + 1);
+
         if (!r.DataCadastro) return;
         const d = parseDbTimestamp(r.DataCadastro);
         if (!d) return;
         if (windowStart && d < windowStart) return;
         if (windowEnd && d > windowEnd) return;
-
-        const status = (r.Status || 'INDEFINIDO').toString().toUpperCase();
-        const sexo = (r.Sexo || 'NÃO INFORMADO').toString().toUpperCase();
-        const setor = (r.Setor || 'SEM SETOR').toString().toUpperCase();
-        const empresa = (r.NomeFantasia || r.RazaoSocial || 'SEM EMPRESA').toString().toUpperCase();
-
-        sexoMap.set(sexo, (sexoMap.get(sexo) || 0) + 1);
-        setorMap.set(setor, (setorMap.get(setor) || 0) + 1);
-        empresaMap.set(empresa, (empresaMap.get(empresa) || 0) + 1);
 
         let key = '';
         if (bucket === 'day') key = dateKey(d);
